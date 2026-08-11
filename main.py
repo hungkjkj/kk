@@ -120,7 +120,7 @@ def analyze_ticker(
             industry = profile_dict.get("industry", industry)
 
         # 2. Income Statement (Growth)
-        rev_5yr = get_row_array(df_ic, "Doanh thu", count=5, default=[30000, 35000, 42000, 52000, 62000])
+        rev_5yr = get_row_array(df_ic, "Doanh thu", count=5, default=[0, 0, 0, 0, 0])
         eps_5yr_ic = get_row_array(df_ic, "EPS", count=5, default=[])
         
         # Lấy EPS mới nhất, fallback sang mảng mock hoặc từ ratio
@@ -128,10 +128,10 @@ def analyze_ticker(
         if latest_eps == 0 and eps_5yr_ic:
             latest_eps = eps_5yr_ic[-1]
         if latest_eps == 0:
-            latest_eps = 5000.0
+            raise Exception(f"Không lấy được dữ liệu tài chính (EPS) cho mã {ticker}.")
             
         if not eps_5yr_ic:
-            eps_5yr_ic = [latest_eps * 0.5, latest_eps * 0.6, latest_eps * 0.7, latest_eps * 0.85, latest_eps]
+            eps_5yr_ic = [0, 0, 0, 0, latest_eps]
 
         # Calculate CAGR EPS
         cagr_eps_5yr = 0
@@ -143,27 +143,30 @@ def analyze_ticker(
             profit_growth = (eps_5yr_ic[-1] - eps_5yr_ic[-2]) / eps_5yr_ic[-2]
 
         # 3. Ratio (Quality & Valuation)
-        roe = get_row_value(df_ratio, "ROE", default=0.15)
-        roic = get_row_value(df_ratio, "ROIC", default=0.12)
-        gross_margin = get_row_value(df_ratio, "Biên lợi nhuận gộp", default=0.20)
-        net_margin = get_row_value(df_ratio, "Biên lợi nhuận ròng", default=0.10)
-        historical_pe = get_row_value(df_ratio, "P/E", default=15.0)
-        pb = get_row_value(df_ratio, "P/B", default=2.0)
+        roe = get_row_value(df_ratio, "ROE", default=0.0)
+        roic = get_row_value(df_ratio, "ROIC", default=0.0)
+        gross_margin = get_row_value(df_ratio, "Biên lợi nhuận gộp", default=0.0)
+        net_margin = get_row_value(df_ratio, "Biên lợi nhuận ròng", default=0.0)
+        historical_pe = get_row_value(df_ratio, "P/E", default=0.0)
+        pb = get_row_value(df_ratio, "P/B", default=0.0)
         latest_bvps = get_row_value(df_ratio, "BVPS", default=latest_eps * 2)
 
         # 4. Balance Sheet
-        cash = get_row_value(df_bs, "Tiền và tương đương tiền", default=1000)
-        total_debt = get_row_value(df_bs, "Nợ phải trả", default=5000)
-        equity = get_row_value(df_bs, "Vốn chủ sở hữu", default=10000)
+        cash = get_row_value(df_bs, "Tiền và tương đương tiền", default=0.0)
+        total_debt = get_row_value(df_bs, "Nợ phải trả", default=0.0)
+        equity = get_row_value(df_bs, "Vốn chủ sở hữu", default=0.0)
         net_debt = total_debt - cash
 
         # Get Current Price
         current_price = latest_eps * historical_pe
         try:
+            from datetime import datetime, timedelta
             q = Quote(symbol=ticker, source="VCI")
-            df_hist = q.history(resolution='1D', limit=1) # Dữ liệu nến giá gần nhất
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+            df_hist = q.history(start=start_date, end=end_date, resolution='1D') # Dữ liệu nến giá gần nhất
             if not df_hist.empty and 'close' in df_hist.columns:
-                current_price = df_hist['close'].iloc[-1]
+                current_price = float(df_hist['close'].iloc[-1])
         except Exception as e:
             print("Quote error:", e)
 
