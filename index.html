@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stock Valuation & Analysis</title>
+    <link rel="stylesheet" href="static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <header>
+            <h1>Vnstock <span>AI</span> Valuation</h1>
+            <p>Trích xuất dữ liệu tài chính & tính toán giá trị thực tự động.</p>
+        </header>
+
+        <main>
+            <div class="search-box">
+                <input type="text" id="tickerInput" placeholder="Nhập mã cổ phiếu (VD: FPT, VNM)..." autocomplete="off">
+                <button id="analyzeBtn">Phân Tích</button>
+            </div>
+
+            <div id="loadingIndicator" class="hidden">
+                <div class="spinner"></div>
+                <p>Đang cào & xử lý dữ liệu từ Vnstock...</p>
+            </div>
+
+            <div id="resultContainer" class="hidden glass-panel">
+                <div class="result-header">
+                    <h2 id="companyName">Tên Công Ty</h2>
+                    <span id="tickerBadge">TICKER</span>
+                </div>
+                
+                <div class="grid-cards">
+                    <div class="card">
+                        <h3>Định giá Graham</h3>
+                        <div class="value highlight" id="grahamValue">-- VND</div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Định giá DCF (5 năm)</h3>
+                        <div class="value highlight" id="dcfValue">-- VND</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Định giá P/E (Ngành)</h3>
+                        <div class="value highlight" id="peValue">-- VND</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>EPS Gần nhất</h3>
+                        <div class="value" id="epsValue">--</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>BVPS Gần nhất</h3>
+                        <div class="value" id="bvpsValue">--</div>
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <p>Xuất file JSON với cấu trúc tối ưu để đưa vào AI (ChatGPT, Claude) phân tích sâu hơn.</p>
+                    <button id="exportBtn" class="primary-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export Data for AI (JSON)
+                    </button>
+                </div>
+            </div>
+            
+            <div id="errorContainer" class="hidden glass-panel error">
+                <h3>Có lỗi xảy ra!</h3>
+                <p id="errorMsg"></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="static/script.js"></script>
+</body>
+</html>
