@@ -200,6 +200,7 @@ button:hover {
 .card .value {
     font-size: 1.4rem;
     font-weight: 700;
+    word-break: break-all;
 }
 
 .card .value.highlight {
