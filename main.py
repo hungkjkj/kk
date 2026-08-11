@@ -162,13 +162,37 @@ def analyze_ticker(
         try:
             from datetime import datetime, timedelta
             q = Quote(symbol=ticker, source="VCI")
-            end_date = datetime.now().strftime('%Y-%m-%d')
-            start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
-            df_hist = q.history(start=start_date, end=end_date, resolution='1D') # Dữ liệu nến giá gần nhất
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=10)
+            df_hist = q.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), resolution='1D') # Dữ liệu nến giá gần nhất
             if not df_hist.empty and 'close' in df_hist.columns:
                 current_price = float(df_hist['close'].iloc[-1])
         except Exception as e:
             print("Quote error:", e)
+            
+        # Get Foreign Trade Data (14 days) from VNDirect API
+        foreign_net_value = 0
+        try:
+            import requests
+            from datetime import datetime, timedelta
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=14)
+            url = f"https://finfo-api.vndirect.com.vn/v4/stock_prices"
+            params = {
+                "sort": "date",
+                "q": f"code:{ticker}~date:gte:{start_date.strftime('%Y-%m-%d')}~date:lte:{end_date.strftime('%Y-%m-%d')}",
+                "size": 100
+            }
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            res = requests.get(url, params=params, headers=headers, timeout=5)
+            if res.status_code == 200:
+                dt_res = res.json().get('data', [])
+                for item in dt_res:
+                    foreign_net_value += (item.get('fBuyVal', 0) - item.get('fSellVal', 0))
+        except Exception as e:
+            print("Foreign trade error:", e)
 
         data = {
             "ticker": ticker,
@@ -203,6 +227,9 @@ def analyze_ticker(
             "financial_summary": {
                 "latest_eps": latest_eps,
                 "latest_bvps": latest_bvps,
+            },
+            "foreign_trade": {
+                "net_value_14d": foreign_net_value
             },
             "notes": "Dữ liệu được lấy thực tế từ thị trường qua thư viện vnstock.api."
         }

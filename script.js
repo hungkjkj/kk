@@ -84,6 +84,22 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             document.getElementById('valHistPe').textContent = data.valuation.historical_pe.toFixed(1);
             document.getElementById('valHistPb').textContent = data.valuation.pb.toFixed(1);
             
+            // 6. Foreign Trade
+            if (data.foreign_trade && data.foreign_trade.net_value_14d !== undefined) {
+                const net = data.foreign_trade.net_value_14d;
+                const el = document.getElementById('valForeignNet');
+                if (net === 0) {
+                    el.textContent = "--";
+                    el.style.color = "";
+                } else {
+                    el.textContent = (net / 1e9).toFixed(2) + " Tỷ";
+                    if (net > 0) el.style.color = '#4CAF50';
+                    else el.style.color = '#F44336';
+                }
+            } else {
+                document.getElementById('valForeignNet').textContent = "N/A";
+            }
+            
             document.getElementById('resultContainer').classList.remove('hidden');
         })
         .catch(err => {
