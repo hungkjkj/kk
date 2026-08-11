@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Stock Valuation & Analysis</title>
+    <title>AI Stock Valuation & Comprehensive Report</title>
     <link rel="stylesheet" href="static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -13,58 +13,115 @@
     <div class="container">
         <header>
             <h1>Vnstock <span>AI</span> Valuation</h1>
-            <p>Trích xuất dữ liệu tài chính & tính toán giá trị thực tự động.</p>
+            <p>Trích xuất dữ liệu tài chính toàn diện & tính toán giá trị thực.</p>
         </header>
 
         <main>
-            <div class="search-box">
-                <input type="text" id="tickerInput" placeholder="Nhập mã cổ phiếu (VD: FPT, VNM)..." autocomplete="off">
-                <button id="analyzeBtn">Phân Tích</button>
+            <div class="glass-panel search-panel">
+                <div class="search-box">
+                    <input type="text" id="tickerInput" placeholder="Nhập mã cổ phiếu (VD: FPT, VNM)..." autocomplete="off">
+                    <button id="analyzeBtn">Phân Tích</button>
+                </div>
+                
+                <div class="settings-toggle">
+                    <label>
+                        <input type="checkbox" id="showSettings"> Tùy chỉnh tham số định giá (Nâng cao)
+                    </label>
+                </div>
+
+                <div id="settingsBox" class="settings-box hidden">
+                    <p class="settings-hint">Để trống để hệ thống Tự Động lấy từ lịch sử.</p>
+                    <div class="input-group">
+                        <label>Tăng trưởng dự phóng g (%):</label>
+                        <input type="number" id="inputG" placeholder="Tự động">
+                    </div>
+                    <div class="input-group">
+                        <label>Lãi suất chiết khấu r (%):</label>
+                        <input type="number" id="inputR" placeholder="Tự động (10%)">
+                    </div>
+                    <div class="input-group">
+                        <label>P/E Ngành:</label>
+                        <input type="number" id="inputPE" placeholder="Tự động">
+                    </div>
+                </div>
             </div>
 
             <div id="loadingIndicator" class="hidden">
                 <div class="spinner"></div>
-                <p>Đang cào & xử lý dữ liệu từ Vnstock...</p>
+                <p>Đang cào & tổng hợp Báo cáo Toàn diện từ Vnstock...</p>
             </div>
 
-            <div id="resultContainer" class="hidden glass-panel">
-                <div class="result-header">
-                    <h2 id="companyName">Tên Công Ty</h2>
-                    <span id="tickerBadge">TICKER</span>
+            <div id="resultContainer" class="hidden">
+                <div class="glass-panel main-info">
+                    <div class="result-header">
+                        <h2 id="companyName">Tên Công Ty</h2>
+                        <span id="tickerBadge">TICKER</span>
+                    </div>
+                    <p id="valuationNote" class="system-note"></p>
                 </div>
-                
-                <div class="grid-cards">
+
+                <!-- 1. Định giá -->
+                <h3 class="section-title">🏷️ KẾT QUẢ ĐỊNH GIÁ</h3>
+                <div class="grid-cards glass-panel">
                     <div class="card">
                         <h3>Định giá Graham</h3>
                         <div class="value highlight" id="grahamValue">-- VND</div>
+                        <p class="source-tag">Bảo thủ & An toàn</p>
                     </div>
-                    
                     <div class="card">
                         <h3>Định giá DCF (5 năm)</h3>
                         <div class="value highlight" id="dcfValue">-- VND</div>
+                        <p class="source-tag" id="dcfSource">Tự động (g=?, r=?)</p>
                     </div>
-
                     <div class="card">
                         <h3>Định giá P/E (Ngành)</h3>
                         <div class="value highlight" id="peValue">-- VND</div>
-                    </div>
-
-                    <div class="card">
-                        <h3>EPS Gần nhất</h3>
-                        <div class="value" id="epsValue">--</div>
-                    </div>
-
-                    <div class="card">
-                        <h3>BVPS Gần nhất</h3>
-                        <div class="value" id="bvpsValue">--</div>
+                        <p class="source-tag" id="peSource">Tự động</p>
                     </div>
                 </div>
 
-                <div class="export-section">
-                    <p>Xuất file JSON với cấu trúc tối ưu để đưa vào AI (ChatGPT, Claude) phân tích sâu hơn.</p>
+                <!-- 2. Tăng trưởng & Chất lượng -->
+                <div class="two-cols">
+                    <div>
+                        <h3 class="section-title">📈 TĂNG TRƯỞNG (GROWTH)</h3>
+                        <div class="grid-cards glass-panel small-cards">
+                            <div class="card"><h3>CAGR (Lợi nhuận 5 năm)</h3><div class="value" id="valCagr">--</div></div>
+                            <div class="card"><h3>Tăng trưởng lợi nhuận</h3><div class="value" id="valProfitGrowth">--</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="section-title">💎 CHẤT LƯỢNG (QUALITY)</h3>
+                        <div class="grid-cards glass-panel small-cards">
+                            <div class="card"><h3>ROE</h3><div class="value" id="valRoe">--</div></div>
+                            <div class="card"><h3>Biên LN Ròng</h3><div class="value" id="valNetMargin">--</div></div>
+                            <div class="card"><h3>Dòng tiền (FCF)</h3><div class="value" id="valFcf">--</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Cân đối & Định giá lịch sử -->
+                <div class="two-cols">
+                    <div>
+                        <h3 class="section-title">⚖️ CÂN ĐỐI KẾ TOÁN</h3>
+                        <div class="grid-cards glass-panel small-cards">
+                            <div class="card"><h3>Tiền mặt</h3><div class="value" id="valCash">--</div></div>
+                            <div class="card"><h3>Vốn chủ sở hữu</h3><div class="value" id="valEquity">--</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="section-title">⏳ ĐỊNH GIÁ LỊCH SỬ</h3>
+                        <div class="grid-cards glass-panel small-cards">
+                            <div class="card"><h3>P/E Lịch sử</h3><div class="value" id="valHistPe">--</div></div>
+                            <div class="card"><h3>P/B Lịch sử</h3><div class="value" id="valHistPb">--</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel export-section">
+                    <p>Xuất file JSON Báo cáo Toàn diện với cấu trúc tối ưu để AI phân tích.</p>
                     <button id="exportBtn" class="primary-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Export Data for AI (JSON)
+                        Export Comprehensive Data for AI
                     </button>
                 </div>
             </div>
