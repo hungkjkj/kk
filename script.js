@@ -51,6 +51,13 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             const formatVND = (num) => new Intl.NumberFormat('vi-VN').format(num);
             const formatPercent = (num) => (num * 100).toFixed(1) + "%";
             
+            // Current Price
+            if (data.valuation && data.valuation.current_price) {
+                document.getElementById('currentPrice').textContent = "Giá HT: " + formatVND(data.valuation.current_price) + " ₫";
+            } else {
+                document.getElementById('currentPrice').textContent = "Giá HT: N/A";
+            }
+            
             // 1. Valuation
             document.getElementById('grahamValue').textContent = data.valuation_results.graham.value_vnd ? formatVND(data.valuation_results.graham.value_vnd) + " ₫" : "N/A";
             document.getElementById('dcfValue').textContent = data.valuation_results.dcf.value_vnd ? formatVND(data.valuation_results.dcf.value_vnd) + " ₫" : "N/A";
