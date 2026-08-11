@@ -121,7 +121,7 @@ def analyze_ticker(
 
         # 2. Income Statement (Growth)
         rev_5yr = get_row_array(df_ic, "Doanh thu", count=5, default=[0, 0, 0, 0, 0])
-        eps_5yr_ic = get_row_array(df_ic, "EPS", count=5, default=[])
+        eps_5yr_ic = get_row_array(df_ic, "Lãi cơ bản", count=5, default=[])
         
         # Lấy EPS mới nhất, fallback sang mảng mock hoặc từ ratio
         latest_eps = get_row_value(df_ratio, "EPS", default=0.0)
@@ -145,8 +145,8 @@ def analyze_ticker(
         # 3. Ratio (Quality & Valuation)
         roe = get_row_value(df_ratio, "ROE", default=0.0)
         roic = get_row_value(df_ratio, "ROIC", default=0.0)
-        gross_margin = get_row_value(df_ratio, "Biên lợi nhuận gộp", default=0.0)
-        net_margin = get_row_value(df_ratio, "Biên lợi nhuận ròng", default=0.0)
+        gross_margin = get_row_value(df_ratio, "Biên LN gộp", default=0.0)
+        net_margin = get_row_value(df_ratio, "Biên LN sau thuế", default=0.0)
         historical_pe = get_row_value(df_ratio, "P/E", default=0.0)
         pb = get_row_value(df_ratio, "P/B", default=0.0)
         latest_bvps = get_row_value(df_ratio, "BVPS", default=latest_eps * 2)
