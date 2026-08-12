@@ -82,11 +82,11 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             // 3. Quality
             document.getElementById('valRoe').textContent = formatPercent(data.quality.roe);
             document.getElementById('valNetMargin').textContent = formatPercent(data.quality.net_margin);
-            document.getElementById('valFcf').textContent = formatVND(data.quality.fcf) + " Tỷ";
+            document.getElementById('valFcf').textContent = formatVND(data.quality.fcf / 1e9) + " Tỷ";
             
             // 4. Balance Sheet
-            document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash) + " Tỷ";
-            document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity) + " Tỷ";
+            document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash / 1e9) + " Tỷ";
+            document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity / 1e9) + " Tỷ";
             if (data.financial_summary && data.financial_summary.latest_bvps) {
                 document.getElementById('valBvps').textContent = formatVND(data.financial_summary.latest_bvps) + " ₫";
             } else {
