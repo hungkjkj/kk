@@ -90,21 +90,21 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
                 document.getElementById('cardNetMargin').style.display = 'none';
                 document.getElementById('cardFcf').style.display = 'none';
                 
-                document.getElementById('cardNim').style.display = 'flex';
+                document.getElementById('cardNim').style.display = 'block';
                 document.getElementById('valNim').textContent = formatPercent(data.bank_metrics.nim);
                 
-                document.getElementById('cardNpl').style.display = 'flex';
+                document.getElementById('cardNpl').style.display = 'block';
                 document.getElementById('valNpl').textContent = formatPercent(data.bank_metrics.npl);
                 
-                document.getElementById('cardCasa').style.display = 'flex';
+                document.getElementById('cardCasa').style.display = 'block';
                 document.getElementById('valCasa').textContent = formatPercent(data.bank_metrics.casa);
                 
-                document.getElementById('cardLdr').style.display = 'flex';
+                document.getElementById('cardLdr').style.display = 'block';
                 document.getElementById('valLdr').textContent = formatPercent(data.bank_metrics.ldr);
             } else {
-                document.getElementById('cardDcf').style.display = 'flex';
-                document.getElementById('cardNetMargin').style.display = 'flex';
-                document.getElementById('cardFcf').style.display = 'flex';
+                document.getElementById('cardDcf').style.display = 'block';
+                document.getElementById('cardNetMargin').style.display = 'block';
+                document.getElementById('cardFcf').style.display = 'block';
                 
                 document.getElementById('cardNim').style.display = 'none';
                 document.getElementById('cardNpl').style.display = 'none';
