@@ -251,7 +251,12 @@ def analyze_ticker(
             start_date = end_date - timedelta(days=10)
             df_hist = q.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), resolution='1D') # Dữ liệu nến giá gần nhất
             if not df_hist.empty and 'close' in df_hist.columns:
-                current_price = float(df_hist['close'].iloc[-1])
+                raw_price = float(df_hist['close'].iloc[-1])
+                # vnstock (VCI) thường trả về giá ở đơn vị nghìn đồng (ví dụ: 14.1 cho 14100 VND)
+                if raw_price < 1000:
+                    current_price = raw_price * 1000
+                else:
+                    current_price = raw_price
         except Exception as e:
             print("Quote error:", e)
             
