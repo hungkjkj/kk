@@ -86,8 +86,9 @@ def get_row_array(df, keywords, start_idx=3, count=5, default=None):
 @app.get("/api/analyze/{ticker}")
 def analyze_ticker(
     ticker: str,
-    user_g: Optional[float] = Query(None),
-    user_r: Optional[float] = Query(None),
+    user_rf: Optional[float] = Query(None),
+    user_beta: Optional[float] = Query(None),
+    user_erp: Optional[float] = Query(None),
     user_pe: Optional[float] = Query(None)
 ):
     ticker = ticker.upper()
@@ -257,12 +258,16 @@ def analyze_ticker(
         bvps = data["financial_summary"]["latest_bvps"]
         
         # 1. Biến g (Tăng trưởng)
-        is_g_user = user_g is not None
-        g = user_g / 100 if is_g_user else data["growth"]["cagr_eps_5yr"]
+        # Sử dụng CAGR của EPS 5 năm
+        g = data["growth"]["cagr_eps_5yr"]
         
-        # 2. Biến r (Chiết khấu)
-        is_r_user = user_r is not None
-        r = user_r / 100 if is_r_user else 0.10  # Mặc định 10%
+        # 2. Biến r (Chiết khấu) tính bằng CAPM: r = Rf + Beta * ERP
+        is_capm_user = user_rf is not None and user_beta is not None and user_erp is not None
+        if is_capm_user:
+            r = (user_rf / 100) + user_beta * (user_erp / 100)
+        else:
+            r = 0.10  # Mặc định 10%
+
         
         # 3. Biến P/E ngành
         is_pe_user = user_pe is not None
@@ -300,9 +305,9 @@ def analyze_ticker(
                 "value_vnd": round(intrinsic_value_dcf, 2) if intrinsic_value_dcf else None,
                 "params": {
                     "g": round(g * 100, 2),
-                    "g_source": "User Input" if is_g_user else "Auto (CAGR 5yr)",
+                    "g_source": "Auto (CAGR 5yr EPS)",
                     "r": round(r * 100, 2),
-                    "r_source": "User Input" if is_r_user else "Auto (Default 10%)"
+                    "r_source": f"CAPM (Rf={user_rf}%, b={user_beta}, ERP={user_erp}%)" if is_capm_user else "Auto (Default 10%)"
                 }
             },
             "relative_pe": {

@@ -15,14 +15,16 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
     }
     
     // Get settings
-    const g = document.getElementById('inputG').value;
-    const r = document.getElementById('inputR').value;
+    const rf = document.getElementById('inputRf').value;
+    const beta = document.getElementById('inputBeta').value;
+    const erp = document.getElementById('inputErp').value;
     const pe = document.getElementById('inputPE').value;
     
     // Build query params
     const params = new URLSearchParams();
-    if (g) params.append('user_g', g);
-    if (r) params.append('user_r', r);
+    if (rf) params.append('user_rf', rf);
+    if (beta) params.append('user_beta', beta);
+    if (erp) params.append('user_erp', erp);
     if (pe) params.append('user_pe', pe);
     
     const qs = params.toString();
@@ -79,6 +81,11 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             // 4. Balance Sheet
             document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash) + " Tỷ";
             document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity) + " Tỷ";
+            if (data.financial_summary && data.financial_summary.latest_bvps) {
+                document.getElementById('valBvps').textContent = formatVND(data.financial_summary.latest_bvps) + " ₫";
+            } else {
+                document.getElementById('valBvps').textContent = "N/A";
+            }
             
             // 5. Hist Valuation
             document.getElementById('valHistPe').textContent = data.valuation.historical_pe.toFixed(1);

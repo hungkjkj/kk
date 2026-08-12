@@ -32,12 +32,16 @@
                 <div id="settingsBox" class="settings-box hidden">
                     <p class="settings-hint">Để trống để hệ thống Tự Động lấy từ lịch sử.</p>
                     <div class="input-group">
-                        <label>Tăng trưởng dự phóng g (%):</label>
-                        <input type="number" id="inputG" placeholder="Tự động">
+                        <label>Lãi suất phi rủi ro (Rf %):</label>
+                        <input type="number" id="inputRf" placeholder="Tự động">
                     </div>
                     <div class="input-group">
-                        <label>Lãi suất chiết khấu r (%):</label>
-                        <input type="number" id="inputR" placeholder="Tự động (10%)">
+                        <label>Hệ số Beta (β):</label>
+                        <input type="number" id="inputBeta" placeholder="Tự động" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>Phần bù rủi ro (ERP %):</label>
+                        <input type="number" id="inputErp" placeholder="Tự động">
                     </div>
                     <div class="input-group">
                         <label>P/E Ngành:</label>
@@ -109,6 +113,7 @@
                         <div class="grid-cards glass-panel small-cards">
                             <div class="card"><h3>Tiền mặt</h3><div class="value" id="valCash">--</div></div>
                             <div class="card"><h3>Vốn chủ sở hữu</h3><div class="value" id="valEquity">--</div></div>
+                            <div class="card"><h3>BVPS Hiện tại</h3><div class="value" id="valBvps">--</div></div>
                         </div>
                     </div>
                     <div>
