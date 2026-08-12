@@ -191,6 +191,10 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
         });
 });
 
+document.getElementById('tickerInput').addEventListener('input', function(e) {
+    this.value = this.value.toUpperCase();
+});
+
 document.getElementById('tickerInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') document.getElementById('analyzeBtn').click();
 });
