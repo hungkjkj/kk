@@ -130,12 +130,27 @@
                     </div>
                 </div>
 
-                <!-- 4. Giao dịch Khối Ngoại -->
+                <!-- 4. Giao dịch Khối Ngoại & Cảnh báo -->
                 <div class="two-cols">
                     <div>
                         <h3 class="section-title">🌐 KHỐI NGOẠI (14 NGÀY)</h3>
                         <div class="grid-cards glass-panel small-cards">
                             <div class="card"><h3>Mua/Bán ròng</h3><div class="value" id="valForeignNet">--</div></div>
+                        </div>
+                    </div>
+                    <div id="qualityWarningSection">
+                        <h3 class="section-title">🚨 CẢNH BÁO LỢI NHUẬN</h3>
+                        <div class="grid-cards glass-panel small-cards">
+                            <div class="card">
+                                <h3>Lợi nhuận cốt lõi</h3>
+                                <div class="value" id="valCoreEarnings">--</div>
+                                <p class="source-tag" id="coreWarningTag" style="display:none;">--</p>
+                            </div>
+                            <div class="card">
+                                <h3>Đầu cơ cổ phiếu</h3>
+                                <div class="value" id="valSpeculation">--</div>
+                                <p class="source-tag" id="specWarningTag" style="display:none;">--</p>
+                            </div>
                         </div>
                     </div>
                 </div>

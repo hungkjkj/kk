@@ -193,6 +193,14 @@ def analyze_ticker(
         rev_5yr = get_row_array(df_ic, ["Doanh thu", "Thu nhập lãi thuần", "Tổng thu nhập hoạt động"], count=5, default=[0, 0, 0, 0, 0])
         eps_5yr_ic = get_row_array(df_ic, ["Lãi cơ bản", "Lợi nhuận sau thuế"], count=5, default=[])
         
+        # Lấy thêm dữ liệu cho Earnings Quality
+        gross_profit = get_row_value(df_ic, ["Lợi nhuận gộp về bán hàng"], default=0.0)
+        if gross_profit == 0:
+            gross_profit = get_row_value(df_ic, ["Lợi nhuận gộp"], default=0.0)
+        selling_expenses = abs(get_row_value(df_ic, ["Chi phí bán hàng"], default=0.0))
+        ga_expenses = abs(get_row_value(df_ic, ["Chi phí quản lý doanh nghiệp"], default=0.0))
+        profit_before_tax = get_row_value(df_ic, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế"], default=0.0)
+        
         # Lấy EPS mới nhất, fallback sang mảng mock hoặc từ ratio
         latest_eps = get_row_value(df_ratio, "EPS", default=0.0)
         if latest_eps == 0 and eps_5yr_ic:
@@ -230,6 +238,9 @@ def analyze_ticker(
         total_debt = get_row_value(df_bs, "Nợ phải trả", default=0.0)
         equity = get_row_value(df_bs, "Vốn chủ sở hữu", default=0.0)
         net_debt = total_debt - cash
+        
+        trading_securities = get_row_value(df_bs, ["Chứng khoán kinh doanh"], default=0.0)
+        total_assets = get_row_value(df_bs, ["Tổng cộng tài sản", "Tổng tài sản"], default=0.0)
 
         # Get Current Price
         current_price = latest_eps * historical_pe
@@ -284,6 +295,11 @@ def analyze_ticker(
                 "casa": get_row_value(df_ratio, "Tỷ lệ CASA", default=0.0),
                 "ldr": get_row_value(df_ratio, "LDR (%)", default=0.0)
             }
+            
+        # Core Earnings & Speculation
+        core_earnings = gross_profit - selling_expenses - ga_expenses
+        core_earnings_ratio = (core_earnings / profit_before_tax) if profit_before_tax > 0 else 0
+        speculation_ratio = (trading_securities / total_assets) if total_assets > 0 else 0
         
         data = {
             "ticker": ticker,
@@ -319,6 +335,14 @@ def analyze_ticker(
             "financial_summary": {
                 "latest_eps": latest_eps,
                 "latest_bvps": latest_bvps,
+            },
+            "earnings_quality": {
+                "core_earnings_ratio": core_earnings_ratio,
+                "speculation_ratio": speculation_ratio,
+                "core_earnings": core_earnings,
+                "profit_before_tax": profit_before_tax,
+                "trading_securities": trading_securities,
+                "total_assets": total_assets
             },
             "foreign_trade": {
                 "net_value_14d": foreign_net_value

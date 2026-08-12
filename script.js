@@ -141,6 +141,48 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
                 document.getElementById('valForeignNet').textContent = "N/A";
             }
             
+            // 7. Earnings Quality
+            if (data.company_profile.isBank) {
+                document.getElementById('qualityWarningSection').style.display = 'none';
+            } else if (data.earnings_quality) {
+                document.getElementById('qualityWarningSection').style.display = 'block';
+                
+                const coreRatio = data.earnings_quality.core_earnings_ratio;
+                const specRatio = data.earnings_quality.speculation_ratio;
+                
+                const elCore = document.getElementById('valCoreEarnings');
+                const tagCore = document.getElementById('coreWarningTag');
+                if (coreRatio === 0) {
+                    elCore.textContent = "N/A";
+                } else {
+                    elCore.textContent = formatPercent(coreRatio);
+                    if (coreRatio < 0.5) {
+                        elCore.style.color = '#F44336';
+                        tagCore.textContent = 'Rủi ro: Mảng chính suy yếu';
+                        tagCore.style.display = 'inline-block';
+                        tagCore.style.background = 'rgba(244, 67, 54, 0.1)';
+                        tagCore.style.color = '#F44336';
+                    } else {
+                        elCore.style.color = '#4CAF50';
+                        tagCore.style.display = 'none';
+                    }
+                }
+                
+                const elSpec = document.getElementById('valSpeculation');
+                const tagSpec = document.getElementById('specWarningTag');
+                elSpec.textContent = formatPercent(specRatio);
+                if (specRatio > 0.1) {
+                    elSpec.style.color = '#F44336';
+                    tagSpec.textContent = 'Rủi ro: Đầu cơ CK';
+                    tagSpec.style.display = 'inline-block';
+                    tagSpec.style.background = 'rgba(244, 67, 54, 0.1)';
+                    tagSpec.style.color = '#F44336';
+                } else {
+                    elSpec.style.color = '';
+                    tagSpec.style.display = 'none';
+                }
+            }
+            
             document.getElementById('resultContainer').classList.remove('hidden');
         })
         .catch(err => {
