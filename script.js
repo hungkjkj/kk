@@ -84,6 +84,34 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             document.getElementById('valNetMargin').textContent = formatPercent(data.quality.net_margin);
             document.getElementById('valFcf').textContent = formatVND(data.quality.fcf / 1e9) + " Tỷ";
             
+            // Bank Specific UI
+            if (data.company_profile.isBank) {
+                document.getElementById('cardDcf').style.display = 'none';
+                document.getElementById('cardNetMargin').style.display = 'none';
+                document.getElementById('cardFcf').style.display = 'none';
+                
+                document.getElementById('cardNim').style.display = 'flex';
+                document.getElementById('valNim').textContent = formatPercent(data.bank_metrics.nim);
+                
+                document.getElementById('cardNpl').style.display = 'flex';
+                document.getElementById('valNpl').textContent = formatPercent(data.bank_metrics.npl);
+                
+                document.getElementById('cardCasa').style.display = 'flex';
+                document.getElementById('valCasa').textContent = formatPercent(data.bank_metrics.casa);
+                
+                document.getElementById('cardLdr').style.display = 'flex';
+                document.getElementById('valLdr').textContent = formatPercent(data.bank_metrics.ldr);
+            } else {
+                document.getElementById('cardDcf').style.display = 'flex';
+                document.getElementById('cardNetMargin').style.display = 'flex';
+                document.getElementById('cardFcf').style.display = 'flex';
+                
+                document.getElementById('cardNim').style.display = 'none';
+                document.getElementById('cardNpl').style.display = 'none';
+                document.getElementById('cardCasa').style.display = 'none';
+                document.getElementById('cardLdr').style.display = 'none';
+            }
+            
             // 4. Balance Sheet
             document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash / 1e9) + " Tỷ";
             document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity / 1e9) + " Tỷ";

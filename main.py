@@ -275,9 +275,20 @@ def analyze_ticker(
         # Tiền chi thường bị âm trên báo cáo, FCF = OCF - Trị tuyệt đối(CapEx) để an toàn
         fcf = ocf - abs(capex)
         
+        is_bank = "Ngân hàng" in industry or "Banks" in industry
+        bank_metrics = None
+        if is_bank:
+            bank_metrics = {
+                "nim": get_row_value(df_ratio, "Biên lãi thuần", default=0.0),
+                "npl": get_row_value(df_ratio, "Nợ xấu (%)", default=0.0),
+                "casa": get_row_value(df_ratio, "Tỷ lệ CASA", default=0.0),
+                "ldr": get_row_value(df_ratio, "LDR (%)", default=0.0)
+            }
+        
         data = {
             "ticker": ticker,
-            "company_profile": {"companyName": company_name, "industry": industry},
+            "company_profile": {"companyName": company_name, "industry": industry, "isBank": is_bank},
+            "bank_metrics": bank_metrics,
             "growth": {
                 "rev_5yr": rev_5yr,
                 "eps_5yr": eps_5yr_ic,
@@ -352,7 +363,7 @@ def analyze_ticker(
             
         # 2. DCF 5 năm
         intrinsic_value_dcf = None
-        if eps > 0:
+        if eps > 0 and not is_bank:
             terminal_pe = industry_pe # Giả định P/E cuối kỳ = P/E ngành
             dcf_sum = sum((eps * ((1 + g) ** i)) / ((1 + r) ** i) for i in range(1, 6))
             terminal_value = (eps * ((1 + g) ** 5) * terminal_pe) / ((1 + r) ** 5)
