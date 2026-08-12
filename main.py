@@ -170,6 +170,12 @@ def analyze_ticker(
             df_bs = None
             
         try:
+            df_cf = f.cash_flow(period='year')
+        except Exception as e:
+            print("CF error:", e)
+            df_cf = None
+            
+        try:
             df_ratio = f.ratio(period='year')
         except Exception as e:
             print("Ratio error:", e)
@@ -262,6 +268,13 @@ def analyze_ticker(
         except Exception as e:
             print("Foreign trade error:", e)
 
+        # Calculate FCF (Dòng tiền tự do)
+        ocf = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh"], default=0.0)
+        capex = get_row_value(df_cf, ["Tiền chi để mua sắm, xây dựng"], default=0.0)
+        
+        # Tiền chi thường bị âm trên báo cáo, FCF = OCF - Trị tuyệt đối(CapEx) để an toàn
+        fcf = ocf - abs(capex)
+        
         data = {
             "ticker": ticker,
             "company_profile": {"companyName": company_name, "industry": industry},
@@ -276,7 +289,7 @@ def analyze_ticker(
                 "roic": roic,
                 "gross_margin": gross_margin,
                 "net_margin": net_margin,
-                "fcf": 0, # Dummy fallback
+                "fcf": fcf,
                 "fcf_conversion": 0
             },
             "balance_sheet": {
