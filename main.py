@@ -83,6 +83,55 @@ def get_row_array(df, keywords, start_idx=3, count=5, default=None):
         print(f"Lỗi khi lấy array {keywords}: {e}")
     return default
 
+def calculate_beta(ticker: str, days: int = 365 * 3) -> float:
+    """
+    Tính hệ số Beta bằng Ma trận phương sai và hiệp phương sai (Covariance Matrix)
+    giữa tỷ suất sinh lợi của cổ phiếu (ticker) và thị trường (VNINDEX).
+    """
+    try:
+        from vnstock.api.quote import Quote
+        from datetime import datetime, timedelta
+        import pandas as pd
+        
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        q_stock = Quote(symbol=ticker, source="VCI")
+        df_stock = q_stock.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), resolution='1D')
+        
+        q_market = Quote(symbol="VNINDEX", source="VCI")
+        df_market = q_market.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), resolution='1D')
+        
+        if df_stock is None or df_stock.empty or df_market is None or df_market.empty:
+            return 1.0
+            
+        df_stock = df_stock[['time', 'close']].rename(columns={'close': 'stock_close'})
+        df_market = df_market[['time', 'close']].rename(columns={'close': 'market_close'})
+        
+        df = pd.merge(df_stock, df_market, on='time', how='inner')
+        df['stock_return'] = df['stock_close'].pct_change()
+        df['market_return'] = df['market_close'].pct_change()
+        df = df.dropna()
+        
+        if len(df) < 30:
+            return 1.0
+            
+        # Ma trận hiệp phương sai (Covariance Matrix)
+        cov_matrix = df[['stock_return', 'market_return']].cov()
+        
+        covariance = cov_matrix.loc['stock_return', 'market_return']
+        variance_market = cov_matrix.loc['market_return', 'market_return']
+        
+        if variance_market == 0:
+            return 1.0
+            
+        beta = covariance / variance_market
+        return round(beta, 2)
+    except Exception as e:
+        print(f"Lỗi tính Beta cho {ticker}: {e}")
+        return 1.0
+
+
 @app.get("/api/analyze/{ticker}")
 def analyze_ticker(
     ticker: str,
@@ -262,12 +311,18 @@ def analyze_ticker(
         g = data["growth"]["cagr_eps_5yr"]
         
         # 2. Biến r (Chiết khấu) tính bằng CAPM: r = Rf + Beta * ERP
-        is_capm_user = user_rf is not None and user_beta is not None and user_erp is not None
-        if is_capm_user:
-            r = (user_rf / 100) + user_beta * (user_erp / 100)
+        # Sử dụng ma trận hiệp phương sai để tính Beta nếu người dùng không nhập
+        rf_val = (user_rf / 100) if user_rf is not None else 0.05  # Mặc định Rf = 5%
+        erp_val = (user_erp / 100) if user_erp is not None else 0.06 # Mặc định ERP = 6%
+        
+        if user_beta is not None:
+            beta_val = user_beta
+            beta_source = "User Input"
         else:
-            r = 0.10  # Mặc định 10%
-
+            beta_val = calculate_beta(ticker, days=365 * 3) # Lấy dữ liệu 3 năm
+            beta_source = "Auto Covariance Matrix"
+            
+        r = rf_val + beta_val * erp_val
         
         # 3. Biến P/E ngành
         is_pe_user = user_pe is not None
@@ -307,7 +362,7 @@ def analyze_ticker(
                     "g": round(g * 100, 2),
                     "g_source": "Auto (CAGR 5yr EPS)",
                     "r": round(r * 100, 2),
-                    "r_source": f"CAPM (Rf={user_rf}%, b={user_beta}, ERP={user_erp}%)" if is_capm_user else "Auto (Default 10%)"
+                    "r_source": f"CAPM (Rf={round(rf_val*100,2)}%, b={beta_val}, ERP={round(erp_val*100,2)}%) [{beta_source}]"
                 }
             },
             "relative_pe": {
