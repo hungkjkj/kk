@@ -152,9 +152,9 @@ def analyze_ticker(
         
         # Fetch data safely
         try:
-            df_profile = c.profile()
+            df_profile = c.overview()
         except Exception as e:
-            print("Profile error:", e)
+            print("Overview error:", e)
             df_profile = None
             
         try:
@@ -180,8 +180,8 @@ def analyze_ticker(
         industry = "N/A"
         if df_profile is not None and not df_profile.empty:
             profile_dict = df_profile.to_dict(orient='records')[0]
-            company_name = profile_dict.get("company_name", company_name)
-            industry = profile_dict.get("industry", industry)
+            company_name = profile_dict.get("organ_name", profile_dict.get("company_name", company_name))
+            industry = profile_dict.get("sector", profile_dict.get("industry", industry))
 
         # 2. Income Statement (Growth)
         rev_5yr = get_row_array(df_ic, ["Doanh thu", "Thu nhập lãi thuần", "Tổng thu nhập hoạt động"], count=5, default=[0, 0, 0, 0, 0])
