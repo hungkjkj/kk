@@ -47,6 +47,12 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             // Basic
             document.getElementById('companyName').textContent = data.company_profile.companyName || ticker;
             document.getElementById('tickerBadge').textContent = data.ticker;
+            if (data.company_profile.industry) {
+                document.getElementById('industryBadge').textContent = data.company_profile.industry;
+                document.getElementById('industryBadge').style.display = 'inline-block';
+            } else {
+                document.getElementById('industryBadge').style.display = 'none';
+            }
             document.getElementById('valuationNote').textContent = data.notes;
             
             // Format functions
