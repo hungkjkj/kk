@@ -126,11 +126,11 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             document.getElementById('valHistPb').textContent = data.valuation.pb.toFixed(1);
             
             // 6. Foreign Trade
-            if (data.foreign_trade && data.foreign_trade.net_value_14d !== undefined) {
+            if (data.foreign_trade && data.foreign_trade.net_value_14d !== undefined && data.foreign_trade.net_value_14d !== null) {
                 const net = data.foreign_trade.net_value_14d;
                 const el = document.getElementById('valForeignNet');
                 if (net === 0) {
-                    el.textContent = "--";
+                    el.textContent = "0.00 Tỷ";
                     el.style.color = "";
                 } else {
                     el.textContent = (net / 1e9).toFixed(2) + " Tỷ";
@@ -138,7 +138,10 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
                     else el.style.color = '#F44336';
                 }
             } else {
-                document.getElementById('valForeignNet').textContent = "N/A";
+                const el = document.getElementById('valForeignNet');
+                el.textContent = "Lỗi API";
+                el.style.color = "#999";
+                el.title = "Không thể lấy dữ liệu giao dịch khối ngoại từ API lúc này.";
             }
             
             // 7. Earnings Quality

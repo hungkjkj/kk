@@ -256,7 +256,7 @@ def analyze_ticker(
             print("Quote error:", e)
             
         # Get Foreign Trade Data (14 days) from VNDirect API
-        foreign_net_value = 0
+        foreign_net_value = None
         try:
             import requests
             from datetime import datetime, timedelta
@@ -274,6 +274,7 @@ def analyze_ticker(
             res = requests.get(url, params=params, headers=headers, timeout=5)
             if res.status_code == 200:
                 dt_res = res.json().get('data', [])
+                foreign_net_value = 0
                 for item in dt_res:
                     foreign_net_value += (item.get('fBuyVal', 0) - item.get('fSellVal', 0))
         except Exception as e:
