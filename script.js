@@ -114,6 +114,8 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             
             // 4. Balance Sheet
             document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash / 1e9) + " Tỷ";
+            document.getElementById('valTotalDebt').textContent = formatVND(data.balance_sheet.total_debt / 1e9) + " Tỷ";
+            document.getElementById('valNetDebt').textContent = formatVND(data.balance_sheet.net_debt / 1e9) + " Tỷ";
             document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity / 1e9) + " Tỷ";
             if (data.financial_summary && data.financial_summary.latest_bvps) {
                 document.getElementById('valBvps').textContent = formatVND(data.financial_summary.latest_bvps) + " ₫";
