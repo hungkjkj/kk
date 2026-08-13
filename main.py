@@ -393,11 +393,15 @@ def analyze_ticker(
             
         # 2. DCF 5 năm
         intrinsic_value_dcf = None
+        is_g_error = False
         if eps > 0 and not is_bank:
-            terminal_pe = industry_pe # Giả định P/E cuối kỳ = P/E ngành
-            dcf_sum = sum((eps * ((1 + g) ** i)) / ((1 + r) ** i) for i in range(1, 6))
-            terminal_value = (eps * ((1 + g) ** 5) * terminal_pe) / ((1 + r) ** 5)
-            intrinsic_value_dcf = dcf_sum + terminal_value
+            if g >= r:
+                is_g_error = True
+            else:
+                terminal_pe = industry_pe # Giả định P/E cuối kỳ = P/E ngành
+                dcf_sum = sum((eps * ((1 + g) ** i)) / ((1 + r) ** i) for i in range(1, 6))
+                terminal_value = (eps * ((1 + g) ** 5) * terminal_pe) / ((1 + r) ** 5)
+                intrinsic_value_dcf = dcf_sum + terminal_value
             
         # 3. P/E
         intrinsic_value_pe = eps * industry_pe if eps > 0 else None
@@ -414,7 +418,7 @@ def analyze_ticker(
                 "value_vnd": round(intrinsic_value_dcf, 2) if intrinsic_value_dcf else None,
                 "params": {
                     "g": round(g * 100, 2),
-                    "g_source": "Auto (CAGR 5yr EPS)",
+                    "g_source": "Lỗi: g >= r" if is_g_error else "Auto (CAGR 5yr EPS)",
                     "r": round(r * 100, 2),
                     "r_source": f"CAPM (Rf={round(rf_val*100,2)}%, b={beta_val}, ERP={round(erp_val*100,2)}%) [{beta_source}]"
                 }
