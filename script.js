@@ -83,12 +83,14 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
             document.getElementById('valRoe').textContent = formatPercent(data.quality.roe);
             document.getElementById('valNetMargin').textContent = formatPercent(data.quality.net_margin);
             document.getElementById('valFcf').textContent = formatVND(data.quality.fcf / 1e9) + " Tỷ";
+            document.getElementById('valCfo').textContent = formatVND(data.quality.cfo / 1e9) + " Tỷ";
             
             // Bank Specific UI
             if (data.company_profile.isBank) {
                 document.getElementById('cardDcf').style.display = 'none';
                 document.getElementById('cardNetMargin').style.display = 'none';
                 document.getElementById('cardFcf').style.display = 'none';
+                document.getElementById('cardCfo').style.display = 'none';
                 
                 document.getElementById('cardNim').style.display = 'block';
                 document.getElementById('valNim').textContent = formatPercent(data.bank_metrics.nim);
@@ -105,6 +107,7 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
                 document.getElementById('cardDcf').style.display = 'block';
                 document.getElementById('cardNetMargin').style.display = 'block';
                 document.getElementById('cardFcf').style.display = 'block';
+                document.getElementById('cardCfo').style.display = 'block';
                 
                 document.getElementById('cardNim').style.display = 'none';
                 document.getElementById('cardNpl').style.display = 'none';

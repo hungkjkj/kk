@@ -323,6 +323,7 @@ def analyze_ticker(
                 "gross_margin": gross_margin,
                 "net_margin": net_margin,
                 "fcf": fcf,
+                "cfo": ocf,
                 "fcf_conversion": 0
             },
             "balance_sheet": {
