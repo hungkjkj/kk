@@ -286,7 +286,7 @@ def analyze_ticker(
             print("Foreign trade error:", e)
 
         # Calculate FCF (Dòng tiền tự do)
-        ocf = get_row_value(df_cf, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh"], default=0.0)
+        ocf = get_row_value(df_cf, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Lưu chuyển thuần từ hoạt động kinh doanh"], default=0.0)
         capex = get_row_value(df_cf, ["Tiền chi để mua sắm, xây dựng"], default=0.0)
         
         # Tiền chi thường bị âm trên báo cáo, FCF = OCF - Trị tuyệt đối(CapEx) để an toàn
