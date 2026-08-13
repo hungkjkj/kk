@@ -395,13 +395,10 @@ def analyze_ticker(
         intrinsic_value_dcf = None
         is_g_error = False
         if eps > 0 and not is_bank:
-            if g >= r:
-                is_g_error = True
-            else:
-                terminal_pe = industry_pe # Giả định P/E cuối kỳ = P/E ngành
-                dcf_sum = sum((eps * ((1 + g) ** i)) / ((1 + r) ** i) for i in range(1, 6))
-                terminal_value = (eps * ((1 + g) ** 5) * terminal_pe) / ((1 + r) ** 5)
-                intrinsic_value_dcf = dcf_sum + terminal_value
+            terminal_pe = industry_pe # Giả định P/E cuối kỳ = P/E ngành
+            dcf_sum = sum((eps * ((1 + g) ** i)) / ((1 + r) ** i) for i in range(1, 6))
+            terminal_value = (eps * ((1 + g) ** 5) * terminal_pe) / ((1 + r) ** 5)
+            intrinsic_value_dcf = dcf_sum + terminal_value
             
         # 3. P/E
         intrinsic_value_pe = eps * industry_pe if eps > 0 else None
