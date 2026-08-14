@@ -60,7 +60,7 @@ def get_row_value(df, keywords, default=0.0):
         print(f"Lỗi khi lấy {keywords}: {e}")
     return default
 
-def get_row_array(df, keywords, start_idx=3, count=5, default=None):
+def get_row_array(df, keywords, count=5, default=None):
     if default is None:
         default = []
     if isinstance(keywords, str):
@@ -78,15 +78,40 @@ def get_row_array(df, keywords, start_idx=3, count=5, default=None):
                 
         if not matches.empty:
             cols = matches.columns.tolist()
+            # Extract period columns
+            period_cols = [c for c in cols if str(c).startswith('20')]
             arr = []
-            for i in range(start_idx, min(start_idx + count, len(cols))):
-                val = matches.iloc[0, i]
-                if pd.notna(val):
-                    try:
-                        arr.append(float(val))
-                    except:
+            if period_cols:
+                # Sort descending (newest first)
+                period_cols.sort(reverse=True)
+                # Take up to 'count' newest periods
+                target_cols = period_cols[:count]
+                for col in target_cols:
+                    val = matches.iloc[0][col]
+                    if pd.notna(val):
+                        try:
+                            arr.append(float(val))
+                        except:
+                            arr.append(0.0)
+                    else:
                         arr.append(0.0)
+            else:
+                # Fallback if no period columns found
+                for i in range(3, min(3 + count, len(cols))):
+                    val = matches.iloc[0, i]
+                    if pd.notna(val):
+                        try:
+                            arr.append(float(val))
+                        except:
+                            arr.append(0.0)
+                    else:
+                        arr.append(0.0)
+            
+            # Reverse to make it chronological (oldest to newest)
             arr.reverse()
+            # Pad with 0.0 if not enough data
+            while len(arr) < count:
+                arr.insert(0, 0.0)
             return arr
     except Exception as e:
         print(f"Lỗi khi lấy array {keywords}: {e}")
@@ -185,10 +210,16 @@ def analyze_ticker(
             df_cf = None
             
         try:
-            df_ratio = f.ratio(period='year')
+            from vnstock.api.financial import Finance as KBSFinance
+            f_kbs = KBSFinance(symbol=ticker, source="KBS")
+            df_ratio = f_kbs.ratio(period='year')
         except Exception as e:
-            print("Ratio error:", e)
-            df_ratio = None
+            print("Ratio error (KBS):", e)
+            try:
+                df_ratio = f.ratio(period='year')
+            except Exception as ex:
+                print("Ratio error (VCI fallback):", ex)
+                df_ratio = None
             
         # 1. Profile
         company_name = f"Công ty Cổ phần {ticker}"
