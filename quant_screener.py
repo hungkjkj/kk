@@ -63,36 +63,27 @@ def get_row_value(df, keywords, year_str, default=0):
                         pass
     except Exception as e:
         pass
-    return default
-
-import concurrent.futures
-
-def fetch_mc(ticker):
-    try:
-        f = Finance(symbol=ticker, source='VCI')
-        df_ratio = f.ratio(period='year')
-        if df_ratio is not None and not df_ratio.empty:
-            mc = 0
-            if 'marketCap' in df_ratio.columns:
-                mc = df_ratio['marketCap'].iloc[0]
-            elif 'market_cap' in df_ratio.columns:
-                mc = df_ratio['market_cap'].iloc[0]
-            return ticker, mc
-    except:
-        pass
-    return ticker, 0
-
 def get_top_market_cap(tickers, limit=10):
-    """ Lấy danh sách Top 10 mã có vốn hóa lớn nhất trong ngành bằng đa luồng. """
-    mc_list = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = executor.map(fetch_mc, tickers)
-        for ticker, mc in results:
-            if mc > 0:
-                mc_list.append((ticker, mc))
-                
-    mc_list.sort(key=lambda x: x[1], reverse=True)
-    return [x[0] for x in mc_list[:limit]]
+    """ Lấy danh sách Top 10 mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
+    try:
+        vn100_df = Listing().symbols_by_group('VN100')
+        if vn100_df is not None and not vn100_df.empty:
+            vn100_symbols = vn100_df['symbol'].tolist()
+            # Lọc các mã trong ngành có mặt trong rổ VN100 (những công ty đầu ngành)
+            top_tickers = [t for t in tickers if t in vn100_symbols]
+            
+            # Nếu ngành nhỏ không đủ 10 mã trong VN100, lấy thêm các mã ngoài cho đủ limit
+            for t in tickers:
+                if t not in top_tickers:
+                    top_tickers.append(t)
+                if len(top_tickers) >= limit:
+                    break
+                    
+            return top_tickers[:limit]
+    except Exception as e:
+        print("Lỗi khi đối chiếu VN100:", e)
+        
+    return tickers[:limit]
 
 def calculate_engine(ticker, tax_rate_fallback=0.2):
     try:
