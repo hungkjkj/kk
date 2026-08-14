@@ -65,53 +65,34 @@ def get_row_value(df, keywords, year_str, default=0):
         pass
     return default
 
-def filter_hard_criteria(tickers):
-    """ Bộ lọc cứng: Thanh khoản > 2 tỷ, Vốn hóa > 500 tỷ. """
-    valid_tickers = []
-    
-    for ticker in tickers:
-        try:
-            s = Vnstock().stock(symbol=ticker, source="VCI")
-            df_hist = s.quote.history(start=(pd.Timestamp.now() - pd.Timedelta(days=40)).strftime("%Y-%m-%d"), 
-                                      end=pd.Timestamp.now().strftime("%Y-%m-%d"))
-                                      
-            if df_hist is None or df_hist.empty or len(df_hist) < 20:
-                continue
-                
-            if 'turnover' in df_hist.columns:
-                avg_val = df_hist['turnover'].tail(20).mean()
-            elif 'value' in df_hist.columns:
-                avg_val = df_hist['value'].tail(20).mean()
-            else:
-                avg_val = (df_hist['close'] * df_hist['volume']).tail(20).mean()
-                
-            if avg_val < 2e9:
-                continue
-                
-            f = Finance(symbol=ticker, source='VCI')
-            df_ratio = f.ratio(period='year')
-            if df_ratio is None or df_ratio.empty:
-                continue
-                
-            market_cap = 0
+import concurrent.futures
+
+def fetch_mc(ticker):
+    try:
+        f = Finance(symbol=ticker, source='VCI')
+        df_ratio = f.ratio(period='year')
+        if df_ratio is not None and not df_ratio.empty:
+            mc = 0
             if 'marketCap' in df_ratio.columns:
-                market_cap = df_ratio['marketCap'].iloc[0]
+                mc = df_ratio['marketCap'].iloc[0]
             elif 'market_cap' in df_ratio.columns:
-                market_cap = df_ratio['market_cap'].iloc[0]
-            else:
-                market_cap = 600 * 1e9 
+                mc = df_ratio['market_cap'].iloc[0]
+            return ticker, mc
+    except:
+        pass
+    return ticker, 0
+
+def get_top_market_cap(tickers, limit=10):
+    """ Lấy danh sách Top 10 mã có vốn hóa lớn nhất trong ngành bằng đa luồng. """
+    mc_list = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(fetch_mc, tickers)
+        for ticker, mc in results:
+            if mc > 0:
+                mc_list.append((ticker, mc))
                 
-            if market_cap < 500: 
-                if market_cap > 1000000000: 
-                    pass
-                else:
-                    continue
-                    
-            valid_tickers.append(ticker)
-        except Exception:
-            continue
-            
-    return valid_tickers
+    mc_list.sort(key=lambda x: x[1], reverse=True)
+    return [x[0] for x in mc_list[:limit]]
 
 def calculate_engine(ticker, tax_rate_fallback=0.2):
     try:
@@ -220,10 +201,10 @@ def run_screener_for_sector(sector):
     if not tickers:
         return []
         
-    valid_tickers = filter_hard_criteria(tickers)
+    top_tickers = get_top_market_cap(tickers, limit=10)
     
     results = []
-    for ticker in valid_tickers:
+    for ticker in top_tickers:
         res = calculate_engine(ticker)
         if res:
             results.append(res)
