@@ -1,4 +1,5 @@
 let currentData = null;
+let radarChartInstance = null;
 
 // Settings toggle
 document.getElementById('showSettings').addEventListener('change', (e) => {
@@ -188,6 +189,112 @@ document.getElementById('analyzeBtn').addEventListener('click', () => {
                 } else {
                     elSpec.style.color = '';
                     tagSpec.style.display = 'none';
+                }
+            }
+            
+            // 8. Đánh giá 360
+            if (data.evaluation_360) {
+                const evalData = data.evaluation_360;
+                
+                // Update Overall Rating
+                const ratingBadge = document.getElementById('overallRating');
+                ratingBadge.textContent = evalData.overall_rating;
+                if (evalData.overall_rating === 'TỐT') {
+                    ratingBadge.style.color = '#4CAF50';
+                } else if (evalData.overall_rating === 'TRUNG BÌNH') {
+                    ratingBadge.style.color = '#FFC107';
+                } else {
+                    ratingBadge.style.color = '#F44336';
+                }
+                
+                // Render Positives
+                const posList = document.getElementById('positiveInsights');
+                posList.innerHTML = '';
+                if (evalData.positives.length > 0) {
+                    evalData.positives.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        posList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = "Không có điểm sáng nổi bật.";
+                    li.style.color = "#999";
+                    posList.appendChild(li);
+                }
+                
+                // Render Negatives
+                const negList = document.getElementById('negativeInsights');
+                negList.innerHTML = '';
+                if (evalData.negatives.length > 0) {
+                    evalData.negatives.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        negList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = "Không có rủi ro lớn hiện hữu.";
+                    li.style.color = "#999";
+                    negList.appendChild(li);
+                }
+                
+                // Render Chart
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                const chartData = {
+                    labels: ['Định giá', 'Tăng trưởng', 'Hiệu quả hoạt động', 'Sức khỏe tài chính', 'Cổ tức'],
+                    datasets: [{
+                        label: 'Điểm Đánh Giá',
+                        data: [
+                            evalData.scores.valuation,
+                            evalData.scores.growth,
+                            evalData.scores.efficiency,
+                            evalData.scores.health,
+                            evalData.scores.dividend
+                        ],
+                        backgroundColor: 'rgba(255, 193, 7, 0.4)', // Vàng hoàng gia
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        pointBackgroundColor: 'rgba(255, 193, 7, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 2,
+                    }]
+                };
+                
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: { size: 12, family: 'Inter' }
+                            },
+                            ticks: {
+                                display: false,
+                                min: 0,
+                                max: 100,
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                };
+
+                if (radarChartInstance) {
+                    radarChartInstance.data = chartData;
+                    radarChartInstance.update();
+                } else {
+                    radarChartInstance = new Chart(ctx, {
+                        type: 'radar',
+                        data: chartData,
+                        options: chartOptions
+                    });
                 }
             }
             

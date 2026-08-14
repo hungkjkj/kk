@@ -232,6 +232,7 @@ def analyze_ticker(
         historical_pe = get_row_value(df_ratio, "P/E", default=0.0)
         pb = get_row_value(df_ratio, "P/B", default=0.0)
         latest_bvps = get_row_value(df_ratio, "BVPS", default=latest_eps * 2)
+        dividend_yield = get_row_value(df_ratio, "Tỷ suất cổ tức (%)", default=0.0)
 
         # 4. Balance Sheet
         cash = get_row_value(df_bs, "Tiền và tương đương tiền", default=0.0)
@@ -409,6 +410,149 @@ def analyze_ticker(
         intrinsic_value_pe = eps * industry_pe if eps > 0 else None
 
         # Build Response
+        
+        # --- Đánh giá 360 (Radar & Insights) ---
+        scores = {"valuation": 50, "growth": 50, "efficiency": 50, "health": 50, "dividend": 50}
+        positives = []
+        negatives = []
+        
+        # 1. Dividend
+        if dividend_yield >= 0.08:
+            scores["dividend"] = 90
+            positives.append(f"Tỷ suất cổ tức rất hấp dẫn ({dividend_yield*100:.1f}%)")
+        elif dividend_yield >= 0.04:
+            scores["dividend"] = 70
+            positives.append(f"Tỷ suất cổ tức tốt ({dividend_yield*100:.1f}%)")
+        elif dividend_yield > 0:
+            scores["dividend"] = 40
+        else:
+            scores["dividend"] = 10
+            negatives.append("Không trả cổ tức hoặc tỷ suất quá thấp")
+
+        # 2. Growth
+        if cagr_eps_5yr > 0.15:
+            scores["growth"] = 90
+            positives.append("Tăng trưởng EPS dài hạn ở mức xuất sắc")
+        elif cagr_eps_5yr > 0.05:
+            scores["growth"] = 65
+            positives.append("Tăng trưởng EPS dài hạn ổn định")
+        elif cagr_eps_5yr < 0:
+            scores["growth"] = 20
+            negatives.append("Tăng trưởng EPS dài hạn đang âm")
+        else:
+            scores["growth"] = 40
+
+        if profit_growth > 0.2:
+            scores["growth"] = min(100, scores["growth"] + 15)
+            positives.append("Lợi nhuận năm gần nhất tăng trưởng mạnh mẽ")
+        elif profit_growth < 0:
+            scores["growth"] = max(0, scores["growth"] - 20)
+            negatives.append("Lợi nhuận năm gần nhất sụt giảm")
+            
+        # 3. Efficiency
+        if is_bank:
+            nim = bank_metrics["nim"] if bank_metrics else 0
+            if nim > 0.04:
+                scores["efficiency"] = 85
+                positives.append("Biên lãi thuần (NIM) duy trì ở mức cao")
+            elif nim > 0.025:
+                scores["efficiency"] = 60
+            else:
+                scores["efficiency"] = 30
+                negatives.append("Biên lãi thuần (NIM) khá thấp")
+                
+            roe_val = roe
+            if roe_val > 0.15:
+                scores["efficiency"] = min(100, scores["efficiency"] + 20)
+                positives.append("Hiệu quả sinh lời trên vốn (ROE) rất tốt")
+            elif roe_val < 0.1:
+                scores["efficiency"] = max(0, scores["efficiency"] - 20)
+                negatives.append("Hiệu quả sinh lời trên vốn (ROE) kém")
+        else:
+            if roe > 0.15:
+                scores["efficiency"] = 85
+                positives.append("Hiệu quả sinh lời trên vốn (ROE) ấn tượng")
+            elif roe > 0.10:
+                scores["efficiency"] = 60
+            else:
+                scores["efficiency"] = 30
+                negatives.append("Hiệu quả sử dụng vốn chủ sở hữu yếu")
+                
+            if gross_margin > 0.3:
+                positives.append("Biên lợi nhuận gộp ở mức cao, lợi thế cạnh tranh tốt")
+                scores["efficiency"] = min(100, scores["efficiency"] + 15)
+            elif gross_margin < 0.1:
+                negatives.append("Biên lợi nhuận gộp thấp")
+                scores["efficiency"] = max(0, scores["efficiency"] - 15)
+
+        # 4. Health
+        if is_bank:
+            npl = bank_metrics["npl"] if bank_metrics else 0
+            casa = bank_metrics["casa"] if bank_metrics else 0
+            if npl < 0.015:
+                scores["health"] = 80
+                positives.append("Tỷ lệ nợ xấu (NPL) được kiểm soát tốt")
+            elif npl > 0.03:
+                scores["health"] = 30
+                negatives.append("Tỷ lệ nợ xấu (NPL) đang ở mức cảnh báo rủi ro")
+            else:
+                scores["health"] = 55
+                
+            if casa > 0.3:
+                scores["health"] = min(100, scores["health"] + 20)
+                positives.append("Tỷ lệ CASA cao, tối ưu hóa được chi phí vốn")
+            elif casa < 0.15:
+                scores["health"] = max(0, scores["health"] - 15)
+                negatives.append("Tỷ lệ CASA thấp so với mặt bằng chung")
+        else:
+            if equity > 0:
+                debt_ratio = net_debt / equity
+                if debt_ratio < 0.2:
+                    scores["health"] = 90
+                    positives.append("Cơ cấu vốn cực kỳ an toàn, ít nợ vay")
+                elif debt_ratio < 0.8:
+                    scores["health"] = 65
+                elif debt_ratio > 1.5:
+                    scores["health"] = 20
+                    negatives.append("Tỷ lệ nợ vay trên vốn chủ sở hữu quá cao")
+                else:
+                    scores["health"] = 40
+            else:
+                scores["health"] = 10
+                negatives.append("Vốn chủ sở hữu âm")
+
+        # 5. Valuation
+        pe_ratio = historical_pe
+        if pe_ratio > 0:
+            if pe_ratio < 10:
+                scores["valuation"] = 85
+                positives.append("Định giá P/E đang ở mức rất hấp dẫn")
+            elif pe_ratio < 15:
+                scores["valuation"] = 60
+            elif pe_ratio > 25:
+                scores["valuation"] = 20
+                negatives.append("Định giá P/E đang ở mức khá đắt đỏ")
+            else:
+                scores["valuation"] = 40
+                
+            pb_ratio = pb
+            if pb_ratio < 1:
+                scores["valuation"] = min(100, scores["valuation"] + 15)
+                positives.append("Giá đang giao dịch dưới giá trị sổ sách (P/B < 1)")
+            elif pb_ratio > 3:
+                scores["valuation"] = max(0, scores["valuation"] - 15)
+        else:
+            scores["valuation"] = 10
+            negatives.append("P/E không hợp lệ hoặc công ty đang lỗ")
+            
+        avg_score = sum(scores.values()) / len(scores)
+        if avg_score >= 75:
+            overall_rating = "TỐT"
+        elif avg_score >= 50:
+            overall_rating = "TRUNG BÌNH"
+        else:
+            overall_rating = "KÉM"
+            
         data["valuation_results"] = {
             "graham": {
                 "method": "Benjamin Graham",
@@ -433,6 +577,13 @@ def analyze_ticker(
                     "pe_source": "User Input" if is_pe_user else "Auto (Industry/Peer PE)"
                 }
             }
+        }
+        
+        data["evaluation_360"] = {
+            "scores": scores,
+            "overall_rating": overall_rating,
+            "positives": positives,
+            "negatives": negatives
         }
         
         data["ai_analysis_prompt"] = f"Bạn là một chuyên gia phân tích tài chính. Dưới đây là dữ liệu toàn diện của {ticker}. Hãy đánh giá tiềm năng tăng trưởng, sức khỏe tài chính và 3 mức định giá (Graham: {intrinsic_value_graham}, DCF: {intrinsic_value_dcf}, P/E: {intrinsic_value_pe})."
