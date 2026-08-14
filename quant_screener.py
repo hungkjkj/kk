@@ -13,9 +13,13 @@ def get_available_sectors():
         df = Listing().symbols_by_industries()
         if df is not None and not df.empty and 'industry_name' in df.columns:
             sectors = df['industry_name'].dropna().unique().tolist()
-            # Lọc bỏ rác hoặc ngành rỗng
-            sectors = [s for s in sectors if s.strip()]
-            return sorted(sectors)
+            blacklist = ["ngân hàng", "chứng khoán", "bất động sản", "dịch vụ tài chính"]
+            filtered_sectors = []
+            for s in sectors:
+                if not s.strip(): continue
+                if not any(b in s.lower() for b in blacklist):
+                    filtered_sectors.append(s)
+            return sorted(filtered_sectors)
         return []
     except Exception as e:
         print("Lỗi khi lấy danh sách ngành:", e)
