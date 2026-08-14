@@ -341,10 +341,10 @@ def analyze_ticker(
         bank_metrics = None
         if is_bank:
             bank_metrics = {
-                "nim": get_row_value(df_ratio, "Biên lãi thuần", default=0.0),
-                "npl": get_row_value(df_ratio, "Nợ xấu (%)", default=0.0),
-                "casa": get_row_value(df_ratio, "Tỷ lệ CASA", default=0.0),
-                "ldr": get_row_value(df_ratio, "LDR (%)", default=0.0)
+                "nim": get_row_value(df_ratio, ["Biên lãi thuần", "NIM", "Tỷ lệ thu nhập lãi thuần"], default=0.0),
+                "npl": get_row_value(df_ratio, ["Nợ xấu", "NPL"], default=0.0),
+                "casa": get_row_value(df_ratio, ["CASA", "Tiền gửi không kỳ hạn"], default=0.0),
+                "ldr": get_row_value(df_ratio, ["LDR (%)", "LDR", "Dư nợ cho vay khách hàng/Tổng vốn huy động"], default=0.0)
             }
             
         # Core Earnings & Speculation
