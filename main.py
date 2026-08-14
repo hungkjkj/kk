@@ -507,16 +507,19 @@ def analyze_ticker(
         else:
             if equity > 0:
                 debt_ratio = net_debt / equity
-                if debt_ratio < 0.2:
+                if debt_ratio < 0.05:
                     scores["health"] = 90
-                    positives.append("Cơ cấu vốn cực kỳ an toàn, ít nợ vay")
-                elif debt_ratio < 0.8:
+                    positives.append("Cơ cấu vốn cực kỳ an toàn, tiền mặt dồi dào, gần như không có nợ vay")
+                elif debt_ratio < 0.30:
                     scores["health"] = 65
-                elif debt_ratio > 1.5:
-                    scores["health"] = 20
-                    negatives.append("Tỷ lệ nợ vay trên vốn chủ sở hữu quá cao")
-                else:
+                elif debt_ratio < 0.60:
                     scores["health"] = 40
+                elif debt_ratio < 1.0:
+                    scores["health"] = 20
+                    negatives.append("Tỷ lệ nợ vay ròng/vốn chủ sở hữu ở mức cao, rủi ro đòn bẩy lớn")
+                else:
+                    scores["health"] = 0
+                    negatives.append("Tỷ lệ nợ vay trên vốn chủ sở hữu vượt quá 100%, cực kỳ rủi ro")
             else:
                 scores["health"] = 10
                 negatives.append("Vốn chủ sở hữu âm")
