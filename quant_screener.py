@@ -5,7 +5,7 @@ import warnings
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
-from vnstock import Listing, Finance, Stock
+from vnstock import Listing, Finance, Vnstock
 
 def get_available_sectors():
     """ Trả về danh sách tất cả các ngành nghề trên thị trường. """
@@ -70,7 +70,7 @@ def filter_hard_criteria(tickers):
     
     for ticker in tickers:
         try:
-            s = Stock(symbol=ticker, source="VCI")
+            s = Vnstock().stock(symbol=ticker, source="VCI")
             df_hist = s.quote.history(start=(pd.Timestamp.now() - pd.Timedelta(days=40)).strftime("%Y-%m-%d"), 
                                       end=pd.Timestamp.now().strftime("%Y-%m-%d"))
                                       
