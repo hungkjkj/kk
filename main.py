@@ -4,6 +4,12 @@ from fastapi.responses import FileResponse
 import uvicorn
 import quant_screener
 import os
+from vnstock.core import setup_api_key
+
+# Tự động setup API Key nếu có cấu hình trên Render
+api_key = os.environ.get("VNSTOCK_API_KEY")
+if api_key:
+    setup_api_key(api_key)
 
 app = FastAPI(title="Exceptional Trader API")
 
