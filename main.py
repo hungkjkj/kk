@@ -20,17 +20,12 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 def read_root():
     return FileResponse("index.html")
 
-def get_row_value(df, keywords, year_index=3, default=0):
-    """
-    Hàm bóc tách dữ liệu an toàn từ DataFrame của vnstock.
-    Tìm dòng chứa keyword trong cột 'item' (hoặc 'item_en', 'item_id') và lấy giá trị năm gần nhất.
-    """
+def get_row_value(df, keywords, default=0.0):
     if isinstance(keywords, str):
         keywords = [keywords]
     try:
         if df is None or df.empty:
             return default
-        # Tìm row có item chứa một trong các keyword
         matches = pd.DataFrame()
         for kw in keywords:
             m = df[df['item'].astype(str).str.contains(kw, case=False, na=False)]
@@ -40,13 +35,27 @@ def get_row_value(df, keywords, year_index=3, default=0):
                 
         if not matches.empty:
             cols = matches.columns.tolist()
-            if len(cols) > year_index:
-                val = matches.iloc[0, year_index]
-                if pd.notna(val):
-                    try:
-                        return float(val)
-                    except:
-                        pass
+            # Filter columns that look like periods (start with '20')
+            period_cols = [c for c in cols if str(c).startswith('20')]
+            if period_cols:
+                # Sort descending to get the newest period first
+                period_cols.sort(reverse=True)
+                for col in period_cols:
+                    val = matches.iloc[0][col]
+                    if pd.notna(val):
+                        try:
+                            return float(val)
+                        except:
+                            pass
+            # Fallback if no period columns found but has enough columns
+            elif len(cols) > 3:
+                for i in range(3, len(cols)):
+                    val = matches.iloc[0, i]
+                    if pd.notna(val):
+                        try:
+                            return float(val)
+                        except:
+                            pass
     except Exception as e:
         print(f"Lỗi khi lấy {keywords}: {e}")
     return default
