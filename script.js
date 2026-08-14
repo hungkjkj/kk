@@ -1,335 +1,122 @@
-let currentData = null;
-let radarChartInstance = null;
+document.addEventListener('DOMContentLoaded', () => {
+    const sectorSelect = document.getElementById('sector-select');
+    const runBtn = document.getElementById('run-btn');
+    const statusMessage = document.getElementById('status-message');
+    const tableContainer = document.getElementById('table-container');
+    const tableBody = document.getElementById('table-body');
+    const btnText = document.querySelector('.btn-text');
+    const spinner = document.querySelector('.spinner');
 
-// Settings toggle
-document.getElementById('showSettings').addEventListener('change', (e) => {
-    const box = document.getElementById('settingsBox');
-    if (e.target.checked) box.classList.remove('hidden');
-    else box.classList.add('hidden');
-});
+    // Fetch sectors on load
+    fetchSectors();
 
-document.getElementById('analyzeBtn').addEventListener('click', () => {
-    const ticker = document.getElementById('tickerInput').value.trim();
-    if (!ticker) {
-        showError("Vui lòng nhập mã cổ phiếu.");
-        return;
+    runBtn.addEventListener('click', () => {
+        const selectedSector = sectorSelect.value;
+        if (!selectedSector) return;
+        runScreener(selectedSector);
+    });
+
+    async function fetchSectors() {
+        try {
+            const response = await fetch('/api/sectors');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                populateSectors(data.sectors);
+            } else {
+                showError('Không thể tải danh sách ngành.');
+            }
+        } catch (error) {
+            showError('Lỗi kết nối đến máy chủ.');
+            console.error(error);
+        }
     }
-    
-    // Get settings
-    const rf = document.getElementById('inputRf').value;
-    const beta = document.getElementById('inputBeta').value;
-    const erp = document.getElementById('inputErp').value;
-    const pe = document.getElementById('inputPE').value;
-    
-    // Build query params
-    const params = new URLSearchParams();
-    if (rf) params.append('user_rf', rf);
-    if (beta) params.append('user_beta', beta);
-    if (erp) params.append('user_erp', erp);
-    if (pe) params.append('user_pe', pe);
-    
-    const qs = params.toString();
-    const url = `/api/analyze/${ticker}` + (qs ? `?${qs}` : '');
 
-    // Hide previous results/errors
-    document.getElementById('resultContainer').classList.add('hidden');
-    document.getElementById('errorContainer').classList.add('hidden');
-    document.getElementById('loadingIndicator').classList.remove('hidden');
-    
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error("Lỗi khi tải dữ liệu từ server.");
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('loadingIndicator').classList.add('hidden');
-            currentData = data;
-            
-            // Basic
-            document.getElementById('companyName').textContent = data.company_profile.companyName || ticker;
-            document.getElementById('tickerBadge').textContent = data.ticker;
-            if (data.company_profile.industry) {
-                document.getElementById('industryBadge').textContent = data.company_profile.industry;
-                document.getElementById('industryBadge').style.display = 'inline-block';
-            } else {
-                document.getElementById('industryBadge').style.display = 'none';
-            }
-            document.getElementById('valuationNote').textContent = data.notes;
-            
-            // Format functions
-            const formatVND = (num) => new Intl.NumberFormat('vi-VN').format(num);
-            const formatPercent = (num) => (num * 100).toFixed(1) + "%";
-            
-            // Current Price
-            if (data.valuation && data.valuation.current_price) {
-                document.getElementById('currentPrice').textContent = "Giá HT: " + formatVND(data.valuation.current_price) + " ₫";
-            } else {
-                document.getElementById('currentPrice').textContent = "Giá HT: N/A";
-            }
-            
-            // 1. Valuation
-            document.getElementById('grahamValue').textContent = data.valuation_results.graham.value_vnd ? formatVND(data.valuation_results.graham.value_vnd) + " ₫" : "N/A";
-            document.getElementById('dcfValue').textContent = data.valuation_results.dcf.value_vnd ? formatVND(data.valuation_results.dcf.value_vnd) + " ₫" : "N/A";
-            document.getElementById('peValue').textContent = data.valuation_results.relative_pe.value_vnd ? formatVND(data.valuation_results.relative_pe.value_vnd) + " ₫" : "N/A";
-            
-            // Source tags
-            document.getElementById('dcfSource').textContent = `g: ${data.valuation_results.dcf.params.g}% (${data.valuation_results.dcf.params.g_source}) | r: ${data.valuation_results.dcf.params.r}% (${data.valuation_results.dcf.params.r_source})`;
-            document.getElementById('peSource').textContent = `P/E: ${data.valuation_results.relative_pe.params.pe} (${data.valuation_results.relative_pe.params.pe_source})`;
-            
-            // 2. Growth
-            document.getElementById('valCagr').textContent = formatPercent(data.growth.cagr_eps_5yr);
-            document.getElementById('valProfitGrowth').textContent = formatPercent(data.growth.profit_growth);
-            
-            // 3. Quality
-            document.getElementById('valRoe').textContent = formatPercent(data.quality.roe);
-            document.getElementById('valNetMargin').textContent = formatPercent(data.quality.net_margin);
-            document.getElementById('valFcf').textContent = formatVND(data.quality.fcf / 1e9) + " Tỷ";
-            document.getElementById('valCfo').textContent = formatVND(data.quality.cfo / 1e9) + " Tỷ";
-            
-            // Bank Specific UI
-            if (data.company_profile.isBank) {
-                document.getElementById('cardDcf').style.display = 'none';
-                document.getElementById('cardNetMargin').style.display = 'none';
-                document.getElementById('cardFcf').style.display = 'none';
-                document.getElementById('cardCfo').style.display = 'none';
-                
-                document.getElementById('cardNim').style.display = 'block';
-                document.getElementById('valNim').textContent = formatPercent(data.bank_metrics.nim);
-                
-                document.getElementById('cardNpl').style.display = 'block';
-                document.getElementById('valNpl').textContent = formatPercent(data.bank_metrics.npl);
-                
-                document.getElementById('cardCasa').style.display = 'block';
-                document.getElementById('valCasa').textContent = formatPercent(data.bank_metrics.casa);
-                
-                document.getElementById('cardLdr').style.display = 'block';
-                document.getElementById('valLdr').textContent = formatPercent(data.bank_metrics.ldr);
-            } else {
-                document.getElementById('cardDcf').style.display = 'block';
-                document.getElementById('cardNetMargin').style.display = 'block';
-                document.getElementById('cardFcf').style.display = 'block';
-                document.getElementById('cardCfo').style.display = 'block';
-                
-                document.getElementById('cardNim').style.display = 'none';
-                document.getElementById('cardNpl').style.display = 'none';
-                document.getElementById('cardCasa').style.display = 'none';
-                document.getElementById('cardLdr').style.display = 'none';
-            }
-            
-            // 4. Balance Sheet
-            document.getElementById('valCash').textContent = formatVND(data.balance_sheet.cash / 1e9) + " Tỷ";
-            document.getElementById('valTotalDebt').textContent = formatVND(data.balance_sheet.total_debt / 1e9) + " Tỷ";
-            document.getElementById('valNetDebt').textContent = formatVND(data.balance_sheet.net_debt / 1e9) + " Tỷ";
-            document.getElementById('valEquity').textContent = formatVND(data.balance_sheet.equity / 1e9) + " Tỷ";
-            if (data.financial_summary && data.financial_summary.latest_bvps) {
-                document.getElementById('valBvps').textContent = formatVND(data.financial_summary.latest_bvps) + " ₫";
-            } else {
-                document.getElementById('valBvps').textContent = "N/A";
-            }
-            
-            // 5. Hist Valuation
-            document.getElementById('valHistPe').textContent = data.valuation.historical_pe.toFixed(1);
-            document.getElementById('valHistPb').textContent = data.valuation.pb.toFixed(1);
-            
-            // 6. Foreign Trade
-            if (data.foreign_trade && data.foreign_trade.net_value_14d !== undefined && data.foreign_trade.net_value_14d !== null) {
-                const net = data.foreign_trade.net_value_14d;
-                const el = document.getElementById('valForeignNet');
-                if (net === 0) {
-                    el.textContent = "0.00 Tỷ";
-                    el.style.color = "";
-                } else {
-                    el.textContent = (net / 1e9).toFixed(2) + " Tỷ";
-                    if (net > 0) el.style.color = '#4CAF50';
-                    else el.style.color = '#F44336';
-                }
-            } else {
-                const el = document.getElementById('valForeignNet');
-                el.textContent = "Lỗi API";
-                el.style.color = "#999";
-                el.title = "Không thể lấy dữ liệu giao dịch khối ngoại từ API lúc này.";
-            }
-            
-            // 7. Earnings Quality
-            if (data.company_profile.isBank) {
-                document.getElementById('qualityWarningSection').style.display = 'none';
-            } else if (data.earnings_quality) {
-                document.getElementById('qualityWarningSection').style.display = 'block';
-                
-                const coreRatio = data.earnings_quality.core_earnings_ratio;
-                const specRatio = data.earnings_quality.speculation_ratio;
-                
-                const elCore = document.getElementById('valCoreEarnings');
-                const tagCore = document.getElementById('coreWarningTag');
-                if (coreRatio === 0) {
-                    elCore.textContent = "N/A";
-                } else {
-                    elCore.textContent = formatPercent(coreRatio);
-                    if (coreRatio < 0.5) {
-                        elCore.style.color = '#F44336';
-                        tagCore.textContent = 'Rủi ro: Mảng chính suy yếu';
-                        tagCore.style.display = 'inline-block';
-                        tagCore.style.background = 'rgba(244, 67, 54, 0.1)';
-                        tagCore.style.color = '#F44336';
-                    } else {
-                        elCore.style.color = '#4CAF50';
-                        tagCore.style.display = 'none';
-                    }
-                }
-                
-                const elSpec = document.getElementById('valSpeculation');
-                const tagSpec = document.getElementById('specWarningTag');
-                elSpec.textContent = formatPercent(specRatio);
-                if (specRatio > 0.1) {
-                    elSpec.style.color = '#F44336';
-                    tagSpec.textContent = 'Rủi ro: Đầu cơ CK';
-                    tagSpec.style.display = 'inline-block';
-                    tagSpec.style.background = 'rgba(244, 67, 54, 0.1)';
-                    tagSpec.style.color = '#F44336';
-                } else {
-                    elSpec.style.color = '';
-                    tagSpec.style.display = 'none';
-                }
-            }
-            
-            // 8. Đánh giá 360
-            if (data.evaluation_360) {
-                const evalData = data.evaluation_360;
-                
-                // Update Overall Rating
-                const ratingBadge = document.getElementById('overallRating');
-                ratingBadge.textContent = evalData.overall_rating;
-                if (evalData.overall_rating === 'TỐT') {
-                    ratingBadge.style.color = '#4CAF50';
-                } else if (evalData.overall_rating === 'TRUNG BÌNH') {
-                    ratingBadge.style.color = '#FFC107';
-                } else {
-                    ratingBadge.style.color = '#F44336';
-                }
-                
-                // Render Positives
-                const posList = document.getElementById('positiveInsights');
-                posList.innerHTML = '';
-                if (evalData.positives.length > 0) {
-                    evalData.positives.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = item;
-                        posList.appendChild(li);
-                    });
-                } else {
-                    const li = document.createElement('li');
-                    li.textContent = "Không có điểm sáng nổi bật.";
-                    li.style.color = "#999";
-                    posList.appendChild(li);
-                }
-                
-                // Render Negatives
-                const negList = document.getElementById('negativeInsights');
-                negList.innerHTML = '';
-                if (evalData.negatives.length > 0) {
-                    evalData.negatives.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = item;
-                        negList.appendChild(li);
-                    });
-                } else {
-                    const li = document.createElement('li');
-                    li.textContent = "Không có rủi ro lớn hiện hữu.";
-                    li.style.color = "#999";
-                    negList.appendChild(li);
-                }
-                
-                // Render Chart
-                const ctx = document.getElementById('radarChart').getContext('2d');
-                const chartData = {
-                    labels: ['Định giá', 'Tăng trưởng', 'Hiệu quả hoạt động', 'Sức khỏe tài chính', 'Cổ tức'],
-                    datasets: [{
-                        label: 'Điểm Đánh Giá',
-                        data: [
-                            evalData.scores.valuation,
-                            evalData.scores.growth,
-                            evalData.scores.efficiency,
-                            evalData.scores.health,
-                            evalData.scores.dividend
-                        ],
-                        backgroundColor: 'rgba(255, 193, 7, 0.4)', // Vàng hoàng gia
-                        borderColor: 'rgba(255, 193, 7, 1)',
-                        pointBackgroundColor: 'rgba(255, 193, 7, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(255, 193, 7, 1)',
-                        borderWidth: 2,
-                    }]
-                };
-                
-                const chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            pointLabels: {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                font: { size: 12, family: 'Inter' }
-                            },
-                            ticks: {
-                                display: false,
-                                min: 0,
-                                max: 100,
-                                stepSize: 20
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                };
-
-                if (radarChartInstance) {
-                    radarChartInstance.data = chartData;
-                    radarChartInstance.update();
-                } else {
-                    radarChartInstance = new Chart(ctx, {
-                        type: 'radar',
-                        data: chartData,
-                        options: chartOptions
-                    });
-                }
-            }
-            
-            document.getElementById('resultContainer').classList.remove('hidden');
-        })
-        .catch(err => {
-            document.getElementById('loadingIndicator').classList.add('hidden');
-            showError(err.message);
+    function populateSectors(sectors) {
+        sectorSelect.innerHTML = '<option value="">-- Chọn một ngành --</option>';
+        sectors.forEach(sector => {
+            const option = document.createElement('option');
+            option.value = sector;
+            option.textContent = sector;
+            sectorSelect.appendChild(option);
         });
-});
+        sectorSelect.disabled = false;
+        runBtn.disabled = false;
+    }
 
-document.getElementById('tickerInput').addEventListener('input', function(e) {
-    this.value = this.value.toUpperCase();
-});
+    async function runScreener(sector) {
+        // UI Loading state
+        runBtn.disabled = true;
+        sectorSelect.disabled = true;
+        btnText.textContent = 'Đang phân tích...';
+        spinner.style.display = 'block';
+        tableContainer.style.display = 'none';
+        statusMessage.textContent = `Hệ thống đang quét các mã thuộc ngành "${sector}". Vui lòng đợi... (Khoảng 1-2 phút)`;
+        statusMessage.style.color = '#38bdf8';
 
-document.getElementById('tickerInput').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') document.getElementById('analyzeBtn').click();
-});
+        try {
+            const response = await fetch(`/api/screener?sector=${encodeURIComponent(sector)}`);
+            const data = await response.json();
 
-document.getElementById('exportBtn').addEventListener('click', () => {
-    if (!currentData) return;
-    const dataStr = JSON.stringify(currentData, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Vnstock_Analysis_${currentData.ticker}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-});
+            if (data.status === 'success') {
+                renderTable(data.data);
+                statusMessage.textContent = `Đã phân tích xong ${data.data.length} mã cổ phiếu hợp lệ!`;
+                statusMessage.style.color = 'var(--success-color)';
+            } else {
+                showError(data.detail || 'Có lỗi xảy ra trong quá trình tính toán.');
+            }
+        } catch (error) {
+            showError('Lỗi kết nối. Có thể máy chủ đang bận, vui lòng thử lại sau.');
+            console.error(error);
+        } finally {
+            // Restore UI
+            runBtn.disabled = false;
+            sectorSelect.disabled = false;
+            btnText.textContent = 'Quét Ngành Này';
+            spinner.style.display = 'none';
+        }
+    }
 
-function showError(msg) {
-    const errContainer = document.getElementById('errorContainer');
-    document.getElementById('errorMsg').textContent = msg;
-    errContainer.classList.remove('hidden');
-}
+    function renderTable(data) {
+        tableBody.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            tableContainer.style.display = 'none';
+            statusMessage.textContent = 'Không có mã nào đủ điều kiện (Vốn hóa, Thanh khoản) trong ngành này.';
+            statusMessage.style.color = '#fbbf24';
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            // Format numbers
+            const formatPct = (val) => (val * 100).toFixed(2) + '%';
+            const formatNum = (val) => val.toFixed(2);
+            
+            // Score Heatmap Color
+            let scoreClass = 'score-mid';
+            if (row['Total Score'] >= 80) scoreClass = 'score-high';
+            else if (row['Total Score'] < 40) scoreClass = 'score-low';
+
+            tr.innerHTML = `
+                <td>${row['Ticker']}</td>
+                <td>${formatPct(row['ROIC_5Y'])}</td>
+                <td>${formatNum(row['Value_Ratio'])}</td>
+                <td>${formatNum(row['CFO_Quality'])}</td>
+                <td>${formatNum(row['DE_5Y'])}</td>
+                <td class="${scoreClass}">${formatNum(row['Total Score'])}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        tableContainer.style.display = 'block';
+    }
+
+    function showError(msg) {
+        statusMessage.textContent = msg;
+        statusMessage.style.color = 'var(--danger-color)';
+        sectorSelect.disabled = false;
+        runBtn.disabled = false;
+    }
+});

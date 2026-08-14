@@ -3,204 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Stock Valuation & Comprehensive Report</title>
-    <link rel="stylesheet" href="static/style.css">
+    <title>Trader Xuất Chúng - Quant Screener</title>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="background-animation"></div>
-    
-    <div class="container">
-        <header>
-            <h1>Vnstock <span>AI</span> Valuation</h1>
-            <p>Trích xuất dữ liệu tài chính toàn diện & tính toán giá trị thực.</p>
-        </header>
-
-        <main>
-            <div class="glass-panel search-panel">
-                <div class="search-box">
-                    <input type="text" id="tickerInput" placeholder="Nhập mã cổ phiếu (VD: FPT, VNM)..." autocomplete="off">
-                    <button id="analyzeBtn">Phân Tích</button>
-                </div>
-                
-                <div class="settings-toggle">
-                    <label>
-                        <input type="checkbox" id="showSettings"> Tùy chỉnh tham số định giá (Nâng cao)
-                    </label>
-                </div>
-
-                <div id="settingsBox" class="settings-box hidden">
-                    <p class="settings-hint">Để trống để hệ thống Tự Động lấy từ lịch sử.</p>
-                    <div class="input-group">
-                        <label>Lãi suất phi rủi ro (Rf %):</label>
-                        <input type="number" id="inputRf" placeholder="Tự động">
-                    </div>
-                    <div class="input-group">
-                        <label>Hệ số Beta (β):</label>
-                        <input type="number" id="inputBeta" placeholder="Tự động" step="0.01">
-                    </div>
-                    <div class="input-group">
-                        <label>Phần bù rủi ro (ERP %):</label>
-                        <input type="number" id="inputErp" placeholder="Tự động">
-                    </div>
-                    <div class="input-group">
-                        <label>P/E Ngành:</label>
-                        <input type="number" id="inputPE" placeholder="Tự động">
-                    </div>
-                </div>
-            </div>
-
-            <div id="loadingIndicator" class="hidden">
-                <div class="spinner"></div>
-                <p>Đang cào & tổng hợp Báo cáo Toàn diện từ Vnstock...</p>
-            </div>
-
-            <div id="resultContainer" class="hidden">
-                <div class="glass-panel main-info">
-                    <div class="result-header">
-                        <h2 id="companyName">Tên Công Ty</h2>
-                        <div>
-                            <span id="tickerBadge">TICKER</span>
-                            <span id="industryBadge" style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.9em; margin-left: 8px; color: #4facfe;">Ngành</span>
-                            <span id="currentPrice" class="current-price-badge">-- ₫</span>
-                        </div>
-                    </div>
-                    <p id="valuationNote" class="system-note"></p>
-                </div>
-
-                <!-- 0. Đánh giá 360 -->
-                <h3 class="section-title">🎯 ĐÁNH GIÁ 360</h3>
-                <div class="glass-panel evaluation-360-container">
-                    <div class="radar-container">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                    <div class="evaluation-insights">
-                        <h2 id="overallRating" class="rating-badge">--</h2>
-                        <p class="evaluation-subtitle">Phân tích cơ bản</p>
-                        
-                        <div class="insight-section">
-                            <h4>Tích cực</h4>
-                            <ul id="positiveInsights" class="insight-list positive">
-                                <!-- JS sẽ render -->
-                            </ul>
-                        </div>
-                        
-                        <div class="insight-section">
-                            <h4>Hạn chế</h4>
-                            <ul id="negativeInsights" class="insight-list negative">
-                                <!-- JS sẽ render -->
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 1. Định giá -->
-                <h3 class="section-title">🏷️ KẾT QUẢ ĐỊNH GIÁ</h3>
-                <div class="grid-cards glass-panel">
-                    <div class="card">
-                        <h3>Định giá Graham</h3>
-                        <div class="value highlight" id="grahamValue">-- VND</div>
-                        <p class="source-tag">Bảo thủ & An toàn</p>
-                    </div>
-                    <div class="card" id="cardDcf">
-                        <h3>Định giá DCF (5 năm)</h3>
-                        <div class="value highlight" id="dcfValue">-- VND</div>
-                        <p class="source-tag" id="dcfSource">Tự động (g=?, r=?)</p>
-                    </div>
-                    <div class="card">
-                        <h3>Định giá P/E (Ngành)</h3>
-                        <div class="value highlight" id="peValue">-- VND</div>
-                        <p class="source-tag" id="peSource">Tự động</p>
-                    </div>
-                </div>
-
-                <!-- 2. Tăng trưởng & Chất lượng -->
-                <div class="two-cols">
-                    <div>
-                        <h3 class="section-title">📈 TĂNG TRƯỞNG (GROWTH)</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card"><h3>CAGR (Lợi nhuận 5 năm)</h3><div class="value" id="valCagr">--</div></div>
-                            <div class="card"><h3>Tăng trưởng lợi nhuận</h3><div class="value" id="valProfitGrowth">--</div></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="section-title">💎 CHẤT LƯỢNG (QUALITY)</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card"><h3>ROE</h3><div class="value" id="valRoe">--</div></div>
-                            <div class="card" id="cardNetMargin"><h3>Biên LN Ròng</h3><div class="value" id="valNetMargin">--</div></div>
-                            <div class="card" id="cardFcf"><h3>Dòng tiền (FCF)</h3><div class="value" id="valFcf">--</div></div>
-                            <div class="card" id="cardCfo"><h3>Dòng tiền (CFO)</h3><div class="value" id="valCfo">--</div></div>
-                            <div class="card" id="cardNim" style="display:none;"><h3>NIM</h3><div class="value" id="valNim">--</div></div>
-                            <div class="card" id="cardNpl" style="display:none;"><h3>Nợ Xấu (NPL)</h3><div class="value" id="valNpl">--</div></div>
-                            <div class="card" id="cardCasa" style="display:none;"><h3>CASA</h3><div class="value" id="valCasa">--</div></div>
-                            <div class="card" id="cardLdr" style="display:none;"><h3>LDR</h3><div class="value" id="valLdr">--</div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Cân đối & Định giá lịch sử -->
-                <div class="two-cols">
-                    <div>
-                        <h3 class="section-title">⚖️ CÂN ĐỐI KẾ TOÁN</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card"><h3>Tiền mặt</h3><div class="value" id="valCash">--</div></div>
-                            <div class="card"><h3>Tổng nợ</h3><div class="value" id="valTotalDebt">--</div></div>
-                            <div class="card"><h3>Nợ ròng</h3><div class="value" id="valNetDebt">--</div></div>
-                            <div class="card"><h3>Vốn chủ sở hữu</h3><div class="value" id="valEquity">--</div></div>
-                            <div class="card"><h3>BVPS Hiện tại</h3><div class="value" id="valBvps">--</div></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="section-title">⏳ ĐỊNH GIÁ LỊCH SỬ</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card"><h3>P/E Lịch sử</h3><div class="value" id="valHistPe">--</div></div>
-                            <div class="card"><h3>P/B Lịch sử</h3><div class="value" id="valHistPb">--</div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Giao dịch Khối Ngoại & Cảnh báo -->
-                <div class="two-cols">
-                    <div>
-                        <h3 class="section-title">🌐 KHỐI NGOẠI (14 NGÀY)</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card"><h3>Mua/Bán ròng</h3><div class="value" id="valForeignNet">--</div></div>
-                        </div>
-                    </div>
-                    <div id="qualityWarningSection">
-                        <h3 class="section-title">🚨 CẢNH BÁO LỢI NHUẬN</h3>
-                        <div class="grid-cards glass-panel small-cards">
-                            <div class="card">
-                                <h3>Lợi nhuận cốt lõi</h3>
-                                <div class="value" id="valCoreEarnings">--</div>
-                                <p class="source-tag" id="coreWarningTag" style="display:none;">--</p>
-                            </div>
-                            <div class="card">
-                                <h3>Đầu cơ cổ phiếu</h3>
-                                <div class="value" id="valSpeculation">--</div>
-                                <p class="source-tag" id="specWarningTag" style="display:none;">--</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-panel export-section">
-                    <p>Xuất data thành file json</p>
-                    <button id="exportBtn" class="primary-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Xuất data thành file json
-                    </button>
-                </div>
-            </div>
-            
-            <div id="errorContainer" class="hidden glass-panel error">
-                <h3>Có lỗi xảy ra!</h3>
-                <p id="errorMsg"></p>
-            </div>
-        </main>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
     </div>
 
-    <script src="static/script.js"></script>
+    <div class="container">
+        <header>
+            <h1>Trader Xuất Chúng</h1>
+            <p>Hệ thống định lượng tìm kiếm siêu cổ phiếu</p>
+        </header>
+
+        <div class="control-panel glass">
+            <div class="input-group">
+                <label for="sector-select">Chọn Ngành Cần Quét:</label>
+                <select id="sector-select" disabled>
+                    <option value="">Đang tải danh sách ngành...</option>
+                </select>
+            </div>
+            <button id="run-btn" disabled>
+                <span class="btn-text">Quét Ngành Này</span>
+                <div class="spinner" style="display: none;"></div>
+            </button>
+        </div>
+
+        <div class="status-message" id="status-message"></div>
+
+        <div class="table-container glass" id="table-container" style="display: none;">
+            <table id="result-table">
+                <thead>
+                    <tr>
+                        <th>Mã CP</th>
+                        <th>ROIC 5 Năm</th>
+                        <th>Value Ratio</th>
+                        <th>CFO Quality</th>
+                        <th>Nợ/Vốn Chủ (5 Năm)</th>
+                        <th>Điểm Số</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Dữ liệu sẽ được render tại đây -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
