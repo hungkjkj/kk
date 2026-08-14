@@ -34,7 +34,7 @@ def get_tickers_by_sector(sector):
         print("Lỗi lấy mã theo ngành:", e)
     return []
 
-def get_row_value(df, keywords, year_index=0, default=0):
+def get_row_value(df, keywords, year_str, default=0):
     if df is None or df.empty:
         return default
     if isinstance(keywords, str):
@@ -50,11 +50,8 @@ def get_row_value(df, keywords, year_index=0, default=0):
                 break
                 
         if not matches.empty:
-            cols = matches.columns.tolist()
-            data_cols = [c for c in cols if str(c).startswith('20')]
-            data_cols = sorted(data_cols, reverse=True) 
-            if len(data_cols) > year_index:
-                val = matches.iloc[0][data_cols[year_index]]
+            if year_str in matches.columns:
+                val = matches.iloc[0][year_str]
                 if pd.notna(val):
                     try:
                         return float(val)
@@ -124,7 +121,21 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             return None
             
         years_cols = [c for c in df_is.columns if str(c).startswith('20')]
+        years_cols = sorted(years_cols, reverse=True)
         if len(years_cols) < 5:
+            return None
+            
+        import re
+        latest_year_str = years_cols[0]
+        match = re.search(r'\d{4}', str(latest_year_str))
+        if not match:
+            return None
+            
+        latest_year = int(match.group(0))
+        current_year = pd.Timestamp.now().year
+        
+        # Chống lỗi lấy data quá cũ (ví dụ data từ 2018)
+        if latest_year < current_year - 2:
             return None
             
         roic_list = []
@@ -132,7 +143,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         total_cfo_5y = 0
         total_ni_5y = 0
         
-        net_income_current = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_index=0)
+        net_income_current = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=str(latest_year))
         
         df_ratio = f.ratio(period='year')
         market_cap = 1
@@ -146,10 +157,11 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             market_cap = market_cap * 1e9
 
         for i in range(5):
-            ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_index=i)
-            tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_index=i)
-            ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_index=i)
-            ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_index=i)
+            target_year_str = str(latest_year - i)
+            ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
+            tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
+            ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
+            ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
             if ebit == 0:
                 ebit = ebt 
             
@@ -159,11 +171,11 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             else:
                 tax_rate = tax_rate_fallback
                 
-            equity = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], year_index=i)
-            debt = get_row_value(df_bs, ["Nợ phải trả", "Liabilities", "Tổng nợ"], year_index=i)
-            cash = get_row_value(df_bs, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_index=i)
+            equity = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], year_str=target_year_str)
+            debt = get_row_value(df_bs, ["Nợ phải trả", "Liabilities", "Tổng nợ"], year_str=target_year_str)
+            cash = get_row_value(df_bs, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_str=target_year_str)
             
-            cfo = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_index=i)
+            cfo = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_str=target_year_str)
             
             invested_capital = equity + debt - cash
             if invested_capital > 0:
