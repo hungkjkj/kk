@@ -98,7 +98,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             
         years_cols = [c for c in df_is.columns if str(c).startswith('20')]
         years_cols = sorted(years_cols, reverse=True)
-        if len(years_cols) < 5:
+        if len(years_cols) < 3:
             return None
             
         import re
@@ -132,7 +132,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         if market_cap < 1000000: 
             market_cap = market_cap * 1e9
 
-        for i in range(5):
+        num_years = min(len(years_cols), 5)
+        for i in range(num_years):
             target_year_str = str(latest_year - i)
             ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
             tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
