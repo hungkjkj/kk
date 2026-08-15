@@ -288,6 +288,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             ratio_year_str = f"{target_year_str}-Năm"
             pb = get_row_value(df_ratio, ["P/B", "Chỉ số giá thị trường trên giá trị sổ sách (P/B)"], year_str=ratio_year_str)
             bp = 1 / pb if pb > 0 else 0
+            
+            # Tính ICR
+            icr = get_row_value(df_ratio, ["Khả năng thanh toán lãi vay", "ICR"], year_str=ratio_year_str)
                 
             history.append({
                 'year': target_year_str,
@@ -295,7 +298,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'de': de,
                 'cfo': cfo,
                 'ni': ni,
-                'bp': bp
+                'bp': bp,
+                'icr': icr
             })
             
         # Reverse history so it is chronological (oldest to newest)
@@ -316,6 +320,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         bp_list = [h['bp'] for h in history if h['bp'] > 0]
         avg_bp = np.mean(bp_list) if bp_list else 0
         value_ratio = avg_bp / avg_roic_5y if avg_roic_5y > 0 else 0
+        
+        current_icr = history[-1]['icr'] if history else 0
 
         return {
             'ticker': ticker,
@@ -323,7 +329,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'ROIC_5Y': avg_roic_5y,
                 'Value_Ratio': value_ratio,
                 'CFO_Quality': cfo_quality,
-                'DE_5Y': avg_de_5y
+                'DE_5Y': avg_de_5y,
+                'ICR_Current': current_icr
             },
             'history': history
         }

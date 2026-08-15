@@ -79,6 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>D/E (5Y Avg)</h3>
                 <p>${formatNum(summary.DE_5Y)}</p>
             </div>
+            <div class="card">
+                <h3>ICR (Current)</h3>
+                <p>${formatNum(summary.ICR_Current)}</p>
+            </div>
         `;
         
         // Destroy old charts if exist
@@ -188,7 +192,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     tension: 0.4
                 }]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, beginAtZero: true }
+                }
+            }
+        });
+
+        // ICR Chart
+        const ctxIcr = document.getElementById('icrChart').getContext('2d');
+        charts.icr = new Chart(ctxIcr, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Interest Coverage Ratio (ICR)',
+                    data: history.map(h => h.icr.toFixed(2)),
+                    backgroundColor: '#14b8a6', // Teal color
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, beginAtZero: true }
+                }
+            }
         });
 
         reportContainer.style.display = 'block';
