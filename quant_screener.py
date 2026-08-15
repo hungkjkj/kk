@@ -747,14 +747,27 @@ def get_comparative_report(main_ticker, peers_str=""):
             df_rank['Score_ICR'] = df_rank['ICR_Current'].rank(pct=True) * 5
             df_rank['Total_Score'] = df_rank['Score_ROIC'] + df_rank['Score_ROIC_TTM'] + df_rank['Score_BP'] + df_rank['Score_CFO'] + df_rank['Score_CFO_TTM'] + df_rank['Score_DE'] + df_rank['Score_DE_Current'] + df_rank['Score_ICR']
         
+        df_rank = df_rank.fillna(0)
         df_rank = df_rank.sort_values(by='Total_Score', ascending=False)
         ranking = df_rank.to_dict('records')
     else:
         ranking = []
         
-    return {
+    result_dict = {
         'status': 'success',
         'main_ticker': main_ticker,
         'reports': reports,
         'ranking': ranking
     }
+    
+    import math
+    def sanitize(obj):
+        if isinstance(obj, dict):
+            return {k: sanitize(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [sanitize(v) for v in obj]
+        elif isinstance(obj, float) and math.isnan(obj):
+            return 0
+        return obj
+        
+    return sanitize(result_dict)
