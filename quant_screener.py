@@ -48,7 +48,7 @@ def get_row_value(df, keywords, year_str, default=0):
         matches = pd.DataFrame()
         item_col = df.columns[0] 
         for kw in keywords:
-            m = df[df[item_col].astype(str).str.contains(kw, case=False, na=False)]
+            m = df[df[item_col].astype(str).str.contains(kw, case=False, na=False, regex=False)]
             if not m.empty:
                 matches = m
                 break
@@ -249,27 +249,17 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
         latest_year = int(match.group(0))
         
-        # Lấy Market Cap
         df_ratio = f.ratio(period='year')
-        market_cap = 1
-        if not df_ratio.empty:
-            if 'marketCap' in df_ratio.columns:
-                market_cap = df_ratio['marketCap'].iloc[0]
-            elif 'market_cap' in df_ratio.columns:
-                market_cap = df_ratio['market_cap'].iloc[0]
-        if market_cap < 1000000: 
-            market_cap = market_cap * 1e9
-
         num_years = min(len(years_cols), 5)
         
         history = []
         
         for i in range(num_years):
             target_year_str = str(latest_year - i)
-            ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
+            ebt = get_row_value(df_is, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
             tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
-            ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
-            ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
+            ni = get_row_value(df_is, ["Lãi/(lỗ) thuần sau thuế", "Lợi nhuận của Cổ đông của Công ty mẹ", "Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
+            ebit = get_row_value(df_is, ["Lãi/(lỗ) từ hoạt động kinh doanh", "Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
             if ebit == 0:
                 ebit = ebt 
             
@@ -281,16 +271,17 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 
             equity = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], year_str=target_year_str)
             debt = get_row_value(df_bs, ["Nợ phải trả", "Liabilities", "Tổng nợ"], year_str=target_year_str)
-            cash = get_row_value(df_bs, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_str=target_year_str)
+            cash = get_row_value(df_bs, ["Tiền và tương đương tiền", "Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_str=target_year_str)
             
-            cfo = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_str=target_year_str)
+            cfo = get_row_value(df_cf, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_str=target_year_str)
             
             invested_capital = equity + debt - cash
             roic = (ebit * (1 - tax_rate)) / invested_capital if invested_capital > 0 else 0
             de = debt / equity if equity > 0 else 0
             
             # Tính B/P
-            bp = equity / market_cap if market_cap > 0 else 0
+            pb = get_row_value(df_ratio, ["P/B"], year_str=target_year_str)
+            bp = 1 / pb if pb > 0 else 0
                 
             history.append({
                 'year': target_year_str,
@@ -315,8 +306,10 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         cfo_quality = total_cfo / total_ni if total_ni != 0 else 0
         
         net_income_current = history[-1]['ni'] if history else 0
-        ep_ratio = net_income_current / market_cap if market_cap > 0 else 0
-        value_ratio = ep_ratio / avg_roic_5y if avg_roic_5y > 0 else 0
+        
+        bp_list = [h['bp'] for h in history if h['bp'] > 0]
+        avg_bp = np.mean(bp_list) if bp_list else 0
+        value_ratio = avg_bp / avg_roic_5y if avg_roic_5y > 0 else 0
 
         return {
             'ticker': ticker,
