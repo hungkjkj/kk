@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.status === 'success' && data.data) {
-                const totalRequested = peersArr.length + 1;
+                const parsedPeers = peers ? peers.split(' ').filter(p => p.trim() !== '') : [];
+                const totalRequested = parsedPeers.length + 1;
                 if (data.data.ranking && data.data.ranking.length > 0 && data.data.ranking.length < totalRequested) {
                     showStatus(`Đã phân tích xong dữ liệu! (Lưu ý: Một số mã đối thủ không hợp lệ hoặc không có dữ liệu)`, false);
                 } else {
