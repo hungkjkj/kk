@@ -13,6 +13,19 @@ if api_key:
 
 app = FastAPI(title="Exceptional Trader API")
 
+from fastapi.responses import PlainTextResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+import traceback
+
+class CatchAllMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as e:
+            return PlainTextResponse(f"SUPER_ERROR: {traceback.format_exc()}", status_code=500)
+
+app.add_middleware(CatchAllMiddleware)
+
 @app.get("/api/sectors")
 def get_sectors():
     try:
