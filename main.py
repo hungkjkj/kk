@@ -41,7 +41,16 @@ async def get_report(ticker: str, peers: str = ""):
         if result.get('status') == 'error':
             return result
             
-        return {"status": "success", "data": result}
+        import json
+        try:
+            # Force serialization here to catch any ValueError/TypeError from NaN/Infinity
+            # BEFORE it hits FastAPI's internal JSONResponse which causes the 500 string
+            safe_json_string = json.dumps(result, allow_nan=False)
+            safe_result = json.loads(safe_json_string)
+        except Exception as json_err:
+            return {"status": "error", "detail": f"Lỗi chuyển đổi dữ liệu (Serialization): {str(json_err)}"}
+            
+        return {"status": "success", "data": safe_result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
