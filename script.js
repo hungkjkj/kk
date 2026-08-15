@@ -400,6 +400,11 @@ document.addEventListener('DOMContentLoaded', () => {
         reportContainer.style.display = 'block';
     }
 
+    function showStatus(msg, isError = false) {
+        statusMessage.textContent = msg;
+        statusMessage.style.color = isError ? 'var(--danger-color)' : '#10b981';
+    }
+
     function showError(msg) {
         statusMessage.textContent = msg;
         statusMessage.style.color = 'var(--danger-color)';
