@@ -25,9 +25,13 @@
                 <i class="fas fa-search search-icon" style="position: absolute; left: 1rem; color: #94a3b8;"></i>
                 <input type="text" id="ticker-input" placeholder="Nhập mã CP (VD: FPT)" style="padding-left: 2.5rem; text-transform: uppercase;">
             </div>
-            <div style="display: flex; align-items: center; position: relative;">
-                <i class="fas fa-users search-icon" style="position: absolute; left: 1rem; color: #94a3b8;"></i>
-                <input type="text" id="peer-input" placeholder="Mã so sánh (VD: CMG ELC)" style="padding-left: 2.5rem; text-transform: uppercase;">
+            <div class="peer-inputs-container" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span style="color: #94a3b8; font-size: 0.9rem;"><i class="fas fa-users"></i> Đối thủ:</span>
+                <input type="text" class="peer-input" placeholder="Mã 1" style="width: 70px; text-transform: uppercase; text-align: center; padding: 0.75rem 0.5rem;">
+                <input type="text" class="peer-input" placeholder="Mã 2" style="width: 70px; text-transform: uppercase; text-align: center; padding: 0.75rem 0.5rem;">
+                <input type="text" class="peer-input" placeholder="Mã 3" style="width: 70px; text-transform: uppercase; text-align: center; padding: 0.75rem 0.5rem;">
+                <input type="text" class="peer-input" placeholder="Mã 4" style="width: 70px; text-transform: uppercase; text-align: center; padding: 0.75rem 0.5rem;">
+                <input type="text" class="peer-input" placeholder="Mã 5" style="width: 70px; text-transform: uppercase; text-align: center; padding: 0.75rem 0.5rem;">
             </div>
             <button id="run-btn">
                 <span class="btn-text">Phân tích</span>

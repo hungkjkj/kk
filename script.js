@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tickerInput = document.getElementById('ticker-input');
-    const peerInput = document.getElementById('peer-input');
     const runBtn = document.getElementById('run-btn');
     const statusMessage = document.getElementById('status-message');
     const reportContainer = document.getElementById('report-container');
@@ -23,7 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     runBtn.addEventListener('click', () => {
         const ticker = tickerInput.value.trim().toUpperCase();
-        const peers = peerInput.value.trim().toUpperCase();
+        const peerInputs = document.querySelectorAll('.peer-input');
+        const peersArr = [];
+        peerInputs.forEach(input => {
+            const val = input.value.trim().toUpperCase();
+            if (val) peersArr.push(val);
+        });
+        const peers = peersArr.join(' ');
+        
         if (!ticker) {
             showError('Vui lòng nhập mã cổ phiếu chính.');
             return;
@@ -34,15 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tickerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') runBtn.click();
     });
-    peerInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') runBtn.click();
-    });
 
     async function runReport(ticker, peers) {
         // UI Loading state
         runBtn.disabled = true;
         tickerInput.disabled = true;
-        peerInput.disabled = true;
+        document.querySelectorAll('.peer-input').forEach(el => el.disabled = true);
         btnText.textContent = 'Đang phân tích...';
         spinner.style.display = 'block';
         reportContainer.style.display = 'none';
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Restore UI
             runBtn.disabled = false;
             tickerInput.disabled = false;
-            peerInput.disabled = false;
+            document.querySelectorAll('.peer-input').forEach(el => el.disabled = false);
             btnText.textContent = 'Phân tích';
             spinner.style.display = 'none';
         }
@@ -270,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.textContent = msg;
         statusMessage.style.color = 'var(--danger-color)';
         tickerInput.disabled = false;
-        peerInput.disabled = false;
+        document.querySelectorAll('.peer-input').forEach(el => el.disabled = false);
         runBtn.disabled = false;
     }
 });
