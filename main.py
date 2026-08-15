@@ -30,7 +30,8 @@ def run_screener(sector: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/report")
-async def get_report(ticker: str, peers: str = ""):
+def get_report(ticker: str, peers: str = ""):
+    print(f"API CALL: /api/report?ticker={ticker}&peers={peers}")
     try:
         if not ticker:
             return {"status": "error", "detail": "Thiếu mã cổ phiếu."}
