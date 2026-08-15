@@ -687,7 +687,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             pass
         return None
 
-def get_comparative_report(main_ticker, peers_str=""):
+def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
     import re
     tickers = [main_ticker]
     if peers_str:
@@ -699,7 +699,7 @@ def get_comparative_report(main_ticker, peers_str=""):
     reports = {}
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        future_to_ticker = {executor.submit(get_stock_report, t): t for t in tickers}
+        future_to_ticker = {executor.submit(get_stock_report, t, tax_rate_fallback): t for t in tickers}
         for future in concurrent.futures.as_completed(future_to_ticker):
             t = future_to_ticker[future]
             try:

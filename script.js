@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     runBtn.addEventListener('click', () => {
         const ticker = tickerInput.value.trim().toUpperCase();
         const peerInputs = document.querySelectorAll('.peer-input');
+        const taxRateInput = document.getElementById('tax-rate-input');
+        
         const peersArr = [];
         peerInputs.forEach(input => {
             const val = input.value.trim().toUpperCase();
@@ -31,18 +33,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const peers = peersArr.join(' ');
         
+        const taxRate = taxRateInput.value ? parseFloat(taxRateInput.value) : 0.2;
+        
         if (!ticker) {
             showError('Vui lòng nhập mã cổ phiếu chính.');
             return;
         }
-        runReport(ticker, peers);
+        runReport(ticker, peers, taxRate);
     });
     
     tickerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') runBtn.click();
     });
 
-    async function runReport(ticker, peers) {
+    async function runReport(ticker, peers, taxRate = 0.2) {
         // UI Loading state
         runBtn.disabled = true;
         tickerInput.disabled = true;
@@ -54,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.style.color = '#38bdf8';
 
         try {
-            const queryParams = new URLSearchParams({ ticker: ticker, peers: peers });
+            const queryParams = new URLSearchParams({ ticker: ticker, peers: peers, taxRate: taxRate });
             const response = await fetch(`/api/report?${queryParams.toString()}`);
             const data = await response.json();
 
@@ -335,8 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 datasetsBp.push({
-                    label: `${t} B/P`,
-                    data: hist.map(h => h.bp.toFixed(2)),
+                    label: `${t} P/B`,
+                    data: hist.map(h => (h.bp > 0 ? 1 / h.bp : 0).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
@@ -395,6 +399,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const cfChartH3 = document.querySelector('#cfChart').parentElement.querySelector('h3');
         if (cfChartH3) {
             cfChartH3.textContent = isBank ? 'LLR (%)' : 'CFO / Net Income (CFO Quality)';
+        }
+        
+        const bpChartH3 = document.querySelector('#bpChart').parentElement.querySelector('h3');
+        if (bpChartH3) {
+            bpChartH3.textContent = 'P/B';
         }
 
         reportContainer.style.display = 'block';
