@@ -181,7 +181,6 @@ def calculate_engine_bank(ticker):
         llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"])
         if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"], latest_year_str)
         if llr: llr = abs(llr)
-        if llr and llr > 1: llr = llr / 100
             
         pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
         if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
@@ -463,7 +462,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     
                 llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"], ratio_year_str)
                 if llr: llr = abs(llr)
-                if llr and llr > 1: llr = llr / 100
                     
                 pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
                 
@@ -485,7 +483,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                             l_val = float(l_match.iloc[0, 3+i])
                             if l_val:
                                 llr = abs(l_val)
-                                if llr > 1: llr = llr / 100
                     except:
                         pass
                 
@@ -517,7 +514,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             if llr_q == 0: llr_q = history[-1]['llr'] if history else 0
             else:
                 llr_q = abs(llr_q)
-                if llr_q > 1: llr_q = llr_q / 100
                 
             pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
             if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
