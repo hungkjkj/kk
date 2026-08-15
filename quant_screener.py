@@ -691,16 +691,23 @@ def get_comparative_report(main_ticker, peers_str=""):
     import re
     tickers = [main_ticker]
     if peers_str:
-        peers = [p.strip().upper() for p in re.split(r'[,\s]+', peers_str) if p.strip()]
-        for p in peers:
+        peer_list = [p.strip().upper() for p in re.split(r'[,\s]+', peers_str) if p.strip()]
+        for p in peer_list:
             if p not in tickers:
                 tickers.append(p)
                 
     reports = {}
-    for t in tickers:
-        rep = get_stock_report(t)
-        if rep:
-            reports[t] = rep
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_ticker = {executor.submit(get_stock_report, t): t for t in tickers}
+        for future in concurrent.futures.as_completed(future_to_ticker):
+            t = future_to_ticker[future]
+            try:
+                rep = future.result()
+                if rep:
+                    reports[t] = rep
+            except Exception as exc:
+                print(f"Lỗi khi lấy {t} song song: {exc}")
             
     if main_ticker not in reports:
         return {'status': 'error', 'detail': f'Không tìm thấy dữ liệu cho mã chính {main_ticker}'}
