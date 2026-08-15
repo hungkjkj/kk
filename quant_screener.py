@@ -169,17 +169,17 @@ def calculate_engine_bank(ticker):
         if latest_year < current_year - 2:
             return None
             
-        npl = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL"])
-        if npl == 0: npl = get_row_value(df_ratio, ["nợ xấu", "NPL"], latest_year_str)
-        if npl == 0 and df_bs_q is not None: npl = get_latest_q_value(df_bs_q, ["nợ xấu", "NPL"])
-        if npl == 0 and df_bs is not None: npl = get_row_value(df_bs, ["nợ xấu", "NPL"], latest_year_str)
+        npl = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
+        if npl == 0: npl = get_row_value(df_ratio, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"], latest_year_str)
+        if npl == 0 and df_bs_q is not None: npl = get_latest_q_value(df_bs_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
+        if npl == 0 and df_bs is not None: npl = get_row_value(df_bs, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"], latest_year_str)
              
-        nim = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần"])
-        if nim == 0: nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], latest_year_str)
+        nim = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
+        if nim == 0: nim = get_row_value(df_ratio, ["NIM", "lãi thuần", "thu nhập lãi thuần"], latest_year_str)
         if nim: nim = nim / 100
             
-        llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"])
-        if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"], latest_year_str)
+        llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"])
+        if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], latest_year_str)
         if llr: llr = abs(llr)
             
         pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
@@ -252,7 +252,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         for i in range(num_years):
             target_year_str = str(latest_year - i)
             ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
-            tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
+            tax = get_row_value(df_is, ["thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
             ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
             ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
             if ebit == 0:
@@ -306,7 +306,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
             ebt_ttm = get_ttm_value(df_is_q, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
-            tax_ttm = get_ttm_value(df_is_q, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"])
+            tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
             ni_ttm = get_ttm_value(df_is_q, ["Lợi nhuận sau thuế", "Net income"])
             ebit_ttm = get_ttm_value(df_is_q, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
             if ebit_ttm == 0: ebit_ttm = ebt_ttm
@@ -457,10 +457,10 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 ratio_year_str = f"{target_year_str}-Năm" if f"{target_year_str}-Năm" in df_ratio.columns else target_year_str
                 bs_year_str = target_year_str
                 
-                nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], ratio_year_str)
+                nim = get_row_value(df_ratio, ["NIM", "lãi thuần", "thu nhập lãi thuần"], ratio_year_str)
                 if nim: nim = nim / 100
                     
-                llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"], ratio_year_str)
+                llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], ratio_year_str)
                 if llr: llr = abs(llr)
                     
                 pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
@@ -503,14 +503,14 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             except:
                 df_ratio_q, df_bs_q = None, None
                 
-            npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL"])
+            npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
             if npl_q == 0: npl_q = history[-1]['npl'] if history else 0
             
-            nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần"])
+            nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
             if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
             if nim_q: nim_q = nim_q / 100
                 
-            llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "DP rủi ro/Nợ xấu"]) # removed "Dự phòng rủi ro tín dụng/Tổng dư nợ" because it fetches provision expense, not NPL coverage
+            llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"]) # removed "Dự phòng rủi ro tín dụng/Tổng dư nợ" because it fetches provision expense, not NPL coverage
             if llr_q == 0: llr_q = history[-1]['llr'] if history else 0
             else:
                 llr_q = abs(llr_q)
@@ -571,7 +571,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         for i in range(num_years):
             target_year_str = str(latest_year - i)
             ebt = get_row_value(df_is, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
-            tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
+            tax = get_row_value(df_is, ["thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
             ni = get_row_value(df_is, ["Lãi/(lỗ) thuần sau thuế", "Lợi nhuận của Cổ đông của Công ty mẹ", "Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
             ebit = get_row_value(df_is, ["Lãi/(lỗ) từ hoạt động kinh doanh", "Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
             if ebit == 0:
@@ -647,7 +647,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         de_current = 0
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
             ebt_ttm = get_ttm_value(df_is_q, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
-            tax_ttm = get_ttm_value(df_is_q, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"])
+            tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
             ni_ttm = get_ttm_value(df_is_q, ["Lợi nhuận sau thuế", "Net income"])
             ebit_ttm = get_ttm_value(df_is_q, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
             if ebit_ttm == 0: ebit_ttm = ebt_ttm
