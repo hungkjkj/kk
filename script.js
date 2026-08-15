@@ -258,7 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
         charts.icr = createLineChart('icrChart', datasetsIcr);
 
         // Update titles if necessary (CFO vs NI is now CFO/NI)
-        document.querySelector('#cfChart').parentElement.querySelector('h3').textContent = 'CFO / Net Income (CFO Quality)';
+        const cfChartH3 = document.querySelector('#cfChart').parentElement.querySelector('h3');
+        if (cfChartH3) {
+            cfChartH3.textContent = 'CFO / Net Income (CFO Quality)';
+        }
 
         reportContainer.style.display = 'block';
     }
