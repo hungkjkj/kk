@@ -249,7 +249,12 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
         latest_year = int(match.group(0))
         
-        df_ratio = f.ratio(period='year')
+        try:
+            f_ratio = Finance(symbol=ticker, source='KBS')
+            df_ratio = f_ratio.ratio(period='year')
+        except:
+            df_ratio = pd.DataFrame()
+            
         num_years = min(len(years_cols), 5)
         
         history = []
@@ -280,7 +285,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             de = debt / equity if equity > 0 else 0
             
             # Tính B/P
-            pb = get_row_value(df_ratio, ["P/B"], year_str=target_year_str)
+            ratio_year_str = f"{target_year_str}-Năm"
+            pb = get_row_value(df_ratio, ["P/B", "Chỉ số giá thị trường trên giá trị sổ sách (P/B)"], year_str=ratio_year_str)
             bp = 1 / pb if pb > 0 else 0
                 
             history.append({

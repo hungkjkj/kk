@@ -133,7 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: '#fbbf24',
                 }]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, beginAtZero: true }
+                }
+            }
         });
 
         // CFO vs NI Chart
@@ -155,7 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 ]
             },
-            options: commonOptions
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, beginAtZero: true }
+                }
+            }
         });
 
         // B/P Chart
