@@ -771,8 +771,9 @@ def get_comparative_report(main_ticker, peers_str=""):
             return {k: sanitize(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [sanitize(v) for v in obj]
-        elif isinstance(obj, float) and math.isnan(obj):
-            return 0
+        elif isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return 0
         return obj
         
     return sanitize(result_dict)
