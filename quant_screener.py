@@ -354,7 +354,10 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             'history': history
         }
     except Exception as e:
-        print("Lỗi khi lấy dữ liệu:", e)
+        try:
+            print(f"Loi khi lay du lieu cho {ticker}: {str(e)[:50]}...")
+        except:
+            pass
         return None
 
 def get_comparative_report(main_ticker, peers_str=""):
