@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
         
-        const isBank = (sector && sector.toLowerCase() === 'ngân hàng');
+        const isBank = (sector && (sector.toLowerCase() === 'ngân hàng' || sector.toLowerCase() === 'banks'));
 
         // Render Ranking Table
         if (ranking && ranking.length > 1) {

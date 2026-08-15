@@ -249,7 +249,7 @@ def run_screener_for_sector(sector):
     
     results = []
     
-    if sector.lower() == 'ngân hàng':
+    if sector.lower() in ['ngân hàng', 'banks']:
         for ticker in top_tickers:
             res = calculate_engine_bank(ticker)
             if res:
@@ -312,7 +312,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             company_name = ticker
             sector = ""
             
-        if sector.lower() == 'ngân hàng':
+        if sector.lower() in ['ngân hàng', 'banks']:
             f = Finance(symbol=ticker, source='KBS')
             df_ratio = f.ratio(period='year')
             df_bs = f.balance_sheet(period='year')
@@ -515,7 +515,7 @@ def get_comparative_report(main_ticker, peers_str=""):
     is_bank = False
     for t, rep in reports.items():
         summary = rep['summary']
-        if rep['sector'].lower() == 'ngân hàng':
+        if rep['sector'].lower() in ['ngân hàng', 'banks']:
             is_bank = True
             rank_data.append({
                 'ticker': t,
