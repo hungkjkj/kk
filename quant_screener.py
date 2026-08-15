@@ -335,25 +335,43 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
             history = []
             num_years = min(len(years_cols), 5)
+            
+            try:
+                f_vci = Finance(symbol=ticker, source='VCI')
+                df_vci = f_vci.ratio(period='year')
+            except:
+                df_vci = None
+                
             for i in range(num_years):
                 target_year_str = str(latest_year - i)
                 ratio_year_str = f"{target_year_str}-Năm" if f"{target_year_str}-Năm" in df_ratio.columns else target_year_str
                 bs_year_str = target_year_str
                 
-                npl = get_row_value(df_ratio, ["nợ xấu", "NPL"], ratio_year_str)
-                if npl == 0 and df_bs is not None and not df_bs.empty: npl = get_row_value(df_bs, ["nợ xấu", "NPL"], bs_year_str)
                 nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], ratio_year_str)
                 llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"], ratio_year_str)
                 pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
-                casa = get_row_value(df_ratio, ["CASA", "không kỳ hạn"], ratio_year_str)
-                if casa == 0 and df_bs is not None and not df_bs.empty: casa = get_row_value(df_bs, ["CASA", "không kỳ hạn"], bs_year_str)
+                
+                casa = 0.0
+                npl = 0.0
+                
+                if df_vci is not None and not df_vci.empty and df_vci.shape[1] > 3 + i:
+                    try:
+                        c_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('CASA', case=False, na=False)]
+                        if not c_match.empty:
+                            casa = float(c_match.iloc[0, 3+i])
+                            
+                        n_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('Nợ xấu', case=False, na=False)]
+                        if not n_match.empty:
+                            npl = float(n_match.iloc[0, 3+i])
+                    except:
+                        pass
                 
                 history.append({
                     'year': target_year_str,
-                    'casa': float(casa) if casa else 0.0,
+                    'casa': casa,
                     'nim': float(nim) if nim else 0.0,
                     'llr': float(llr) if llr else 0.0,
-                    'npl': float(npl) if npl else 0.0,
+                    'npl': npl,
                     'pb': float(pb) if pb else 0.0
                 })
             
