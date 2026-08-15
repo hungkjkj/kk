@@ -6,6 +6,7 @@
     <title>Trader Xuất Chúng - Quant Screener</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="background-blobs">
@@ -21,35 +22,36 @@
 
         <div class="control-panel glass">
             <div class="input-group">
-                <label for="sector-select">Chọn Ngành Cần Quét:</label>
-                <select id="sector-select" disabled>
-                    <option value="">Đang tải danh sách ngành...</option>
-                </select>
+                <label for="ticker-input">Nhập mã cổ phiếu:</label>
+                <input type="text" id="ticker-input" placeholder="VD: FPT, HPG..." style="text-transform: uppercase;">
             </div>
-            <button id="run-btn" disabled>
-                <span class="btn-text">Quét Ngành Này</span>
+            <button id="run-btn">
+                <span class="btn-text">Phân tích</span>
                 <div class="spinner" style="display: none;"></div>
             </button>
         </div>
 
         <div class="status-message" id="status-message"></div>
 
-        <div class="table-container glass" id="table-container" style="display: none;">
-            <table id="result-table">
-                <thead>
-                    <tr>
-                        <th>Mã CP</th>
-                        <th>ROIC 5 Năm</th>
-                        <th>Value Ratio</th>
-                        <th>CFO Quality</th>
-                        <th>Nợ/Vốn Chủ (5 Năm)</th>
-                        <th>Điểm Số</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    <!-- Dữ liệu sẽ được render tại đây -->
-                </tbody>
-            </table>
+        <div class="report-container glass" id="report-container" style="display: none;">
+            <div class="summary-cards" id="summary-cards">
+                <!-- Summary will be injected here -->
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-wrapper">
+                    <canvas id="roicChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="deChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="cfChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="bpChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 

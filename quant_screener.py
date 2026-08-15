@@ -223,3 +223,126 @@ def run_screener_for_sector(sector):
     df = df.fillna(0)
     
     return df.to_dict('records')
+
+def get_stock_report(ticker, tax_rate_fallback=0.2):
+    try:
+        f = Finance(symbol=ticker, source='VCI')
+        f_tcbs = Finance(symbol=ticker, source='TCBS')
+        
+        df_cf = f.cash_flow(period='year')
+        df_is = f.income_statement(period='year')
+        df_bs = f.balance_sheet(period='year')
+        
+        if df_cf is None or df_is is None or df_bs is None:
+            return None
+            
+        years_cols = [c for c in df_is.columns if str(c).startswith('20')]
+        years_cols = sorted(years_cols, reverse=True)
+        if len(years_cols) == 0:
+            return None
+            
+        import re
+        latest_year_str = years_cols[0]
+        match = re.search(r'\d{4}', str(latest_year_str))
+        if not match:
+            return None
+            
+        latest_year = int(match.group(0))
+        
+        # Lấy Market Cap
+        df_ratio = f.ratio(period='year')
+        market_cap = 1
+        if not df_ratio.empty:
+            if 'marketCap' in df_ratio.columns:
+                market_cap = df_ratio['marketCap'].iloc[0]
+            elif 'market_cap' in df_ratio.columns:
+                market_cap = df_ratio['market_cap'].iloc[0]
+        if market_cap < 1000000: 
+            market_cap = market_cap * 1e9
+            
+        # Lấy P/B lịch sử từ TCBS nếu có
+        historical_pb = {}
+        try:
+            df_tcbs_ratio = f_tcbs.ratio(period='year')
+            if not df_tcbs_ratio.empty and 'priceToBook' in df_tcbs_ratio.columns and 'year' in df_tcbs_ratio.columns:
+                for _, row in df_tcbs_ratio.iterrows():
+                    historical_pb[str(row['year'])] = row['priceToBook']
+        except:
+            pass
+
+        num_years = min(len(years_cols), 5)
+        
+        history = []
+        
+        for i in range(num_years):
+            target_year_str = str(latest_year - i)
+            ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
+            tax = get_row_value(df_is, ["Chi phí thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
+            ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
+            ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
+            if ebit == 0:
+                ebit = ebt 
+            
+            if ebt > 0:
+                tax_rate = tax / ebt
+                tax_rate = max(0.0, min(0.22, tax_rate))
+            else:
+                tax_rate = tax_rate_fallback
+                
+            equity = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], year_str=target_year_str)
+            debt = get_row_value(df_bs, ["Nợ phải trả", "Liabilities", "Tổng nợ"], year_str=target_year_str)
+            cash = get_row_value(df_bs, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_str=target_year_str)
+            
+            cfo = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_str=target_year_str)
+            
+            invested_capital = equity + debt - cash
+            roic = (ebit * (1 - tax_rate)) / invested_capital if invested_capital > 0 else 0
+            de = debt / equity if equity > 0 else 0
+            
+            # Tính B/P
+            # Nếu có P/B lịch sử từ TCBS thì dùng nghịch đảo, ngược lại dùng Equity / current_market_cap
+            pb = historical_pb.get(target_year_str, 0)
+            if pb > 0:
+                bp = 1 / pb
+            else:
+                bp = equity / market_cap if market_cap > 0 else 0
+                
+            history.append({
+                'year': target_year_str,
+                'roic': roic,
+                'de': de,
+                'cfo': cfo,
+                'ni': ni,
+                'bp': bp
+            })
+            
+        # Reverse history so it is chronological (oldest to newest)
+        history.reverse()
+        
+        # Calculate averages for summary
+        roic_list = [h['roic'] for h in history]
+        de_list = [h['de'] for h in history]
+        total_cfo = sum(h['cfo'] for h in history)
+        total_ni = sum(h['ni'] for h in history)
+        
+        avg_roic_5y = np.mean(roic_list) if roic_list else 0
+        avg_de_5y = np.mean(de_list) if de_list else 0
+        cfo_quality = total_cfo / total_ni if total_ni != 0 else 0
+        
+        net_income_current = history[-1]['ni'] if history else 0
+        ep_ratio = net_income_current / market_cap if market_cap > 0 else 0
+        value_ratio = ep_ratio / avg_roic_5y if avg_roic_5y > 0 else 0
+
+        return {
+            'ticker': ticker,
+            'summary': {
+                'ROIC_5Y': avg_roic_5y,
+                'Value_Ratio': value_ratio,
+                'CFO_Quality': cfo_quality,
+                'DE_5Y': avg_de_5y
+            },
+            'history': history
+        }
+    except Exception as e:
+        print("Lỗi khi lấy dữ liệu:", e)
+        return None

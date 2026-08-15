@@ -118,7 +118,7 @@ header p {
     font-weight: 600;
 }
 
-select {
+select, input[type="text"] {
     padding: 0.8rem 1rem;
     border-radius: 8px;
     background: rgba(15, 23, 42, 0.8);
@@ -128,15 +128,18 @@ select {
     outline: none;
     transition: all 0.2s;
     font-family: inherit;
+}
+
+select {
     cursor: pointer;
 }
 
-select:focus {
+select:focus, input[type="text"]:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-select:disabled {
+select:disabled, input[type="text"]:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -245,6 +248,52 @@ tbody tr:hover {
 
 .score-mid {
     color: #fbbf24;
+}
+
+/* Report Styles */
+.report-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card h3 {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+}
+
+.card p {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.chart-wrapper {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    height: 300px;
 }
 
 @keyframes fadeIn {

@@ -29,6 +29,16 @@ def run_screener(sector: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/report")
+def get_report(ticker: str):
+    try:
+        results = quant_screener.get_stock_report(ticker.upper())
+        if results is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dữ liệu cho mã cổ phiếu này.")
+        return {"status": "success", "data": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Phục vụ index.html mặc định
 @app.get("/")
 def read_root():

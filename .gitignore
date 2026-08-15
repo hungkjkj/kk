@@ -1,3 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
+.env
+.agents/
+api_key.json
+.DS_Store
