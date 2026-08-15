@@ -13,7 +13,7 @@ def get_available_sectors():
         df = Listing().symbols_by_industries()
         if df is not None and not df.empty and 'industry_name' in df.columns:
             sectors = df['industry_name'].dropna().unique().tolist()
-            blacklist = ["ngân hàng", "chứng khoán", "bất động sản", "dịch vụ tài chính"]
+            blacklist = ["chứng khoán", "bất động sản", "dịch vụ tài chính"]
             filtered_sectors = []
             for s in sectors:
                 if not s.strip(): continue
@@ -85,6 +85,57 @@ def get_top_market_cap(tickers, limit=10):
         print("Lỗi khi đối chiếu VN100:", e)
         
     return tickers[:limit]
+
+def calculate_engine_bank(ticker):
+    try:
+        f = Finance(symbol=ticker, source='KBS')
+        df_ratio = f.ratio(period='year')
+        df_bs = f.balance_sheet(period='year')
+        
+        if df_ratio is None or df_ratio.empty:
+            return None
+            
+        years_cols = [c for c in df_ratio.columns if str(c).startswith('20') and '-Năm' in str(c)]
+        if not years_cols:
+            years_cols = [c for c in df_ratio.columns if str(c).startswith('20')]
+            if not years_cols:
+                return None
+        
+        years_cols = sorted(years_cols, reverse=True)
+        latest_year_str = years_cols[0]
+        
+        import re
+        match = re.search(r'\d{4}', str(latest_year_str))
+        if not match:
+            return None
+            
+        latest_year = int(match.group(0))
+        current_year = pd.Timestamp.now().year
+        if latest_year < current_year - 2:
+            return None
+            
+        npl = get_row_value(df_ratio, ["nợ xấu", "NPL"], latest_year_str)
+        if npl == 0 and df_bs is not None and not df_bs.empty:
+             npl = get_row_value(df_bs, ["nợ xấu", "NPL"], latest_year_str)
+             
+        nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], latest_year_str)
+        llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"], latest_year_str)
+        pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
+        
+        casa = get_row_value(df_ratio, ["CASA", "không kỳ hạn"], latest_year_str)
+        if casa == 0 and df_bs is not None and not df_bs.empty:
+            casa = get_row_value(df_bs, ["CASA", "không kỳ hạn"], latest_year_str)
+            
+        return {
+            'Ticker': ticker,
+            'CASA': float(casa) if casa else 0.0,
+            'NIM': float(nim) if nim else 0.0,
+            'LLR': float(llr) if llr else 0.0,
+            'NPL': float(npl) if npl else 0.0,
+            'PB': float(pb) if pb else 0.0
+        }
+    except Exception as e:
+        return None
 
 def calculate_engine(ticker, tax_rate_fallback=0.2):
     try:
@@ -197,36 +248,130 @@ def run_screener_for_sector(sector):
     top_tickers = get_top_market_cap(tickers, limit=10)
     
     results = []
-    for ticker in top_tickers:
-        res = calculate_engine(ticker)
-        if res:
-            results.append(res)
+    
+    if sector.lower() == 'ngân hàng':
+        for ticker in top_tickers:
+            res = calculate_engine_bank(ticker)
+            if res:
+                results.append(res)
+                
+        df = pd.DataFrame(results)
+        if df.empty:
+            return []
             
-    df = pd.DataFrame(results)
-    if df.empty:
-        return []
+        df['Score_CASA'] = df['CASA'].rank(pct=True) * 20
+        df['Score_NIM'] = df['NIM'].rank(pct=True) * 20
+        df['Score_LLR'] = df['LLR'].rank(pct=True) * 15
+        df['Score_NPL'] = df['NPL'].rank(pct=True, ascending=False) * 25
+        df['Score_PB'] = df['PB'].rank(pct=True, ascending=False) * 20
         
-    # SCORING
-    df['Score_ROIC'] = df['ROIC_5Y'].rank(pct=True) * 100
-    df['Score_Value'] = df['Value_Ratio'].rank(pct=True) * 100
-    df['Score_CFO'] = df['CFO_Quality'].rank(pct=True) * 100
-    df.loc[df['CFO_Quality'] < 0, 'Score_CFO'] = 0
-    df['Score_DE'] = df['DE_5Y'].rank(pct=True, ascending=False) * 100
-    
-    df['Total Score'] = (df['Score_ROIC'] * 0.4) + \
-                        (df['Score_Value'] * 0.3) + \
-                        (df['Score_CFO'] * 0.2) + \
-                        (df['Score_DE'] * 0.1)
-                        
-    df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
-    
-    # Fill NA and clean before returning
-    df = df.fillna(0)
-    
-    return df.to_dict('records')
+        df['Total Score'] = df['Score_CASA'] + df['Score_NIM'] + df['Score_LLR'] + df['Score_NPL'] + df['Score_PB']
+        df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
+        df = df.fillna(0)
+        return df.to_dict('records')
+    else:
+        for ticker in top_tickers:
+            res = calculate_engine(ticker)
+            if res:
+                results.append(res)
+                
+        df = pd.DataFrame(results)
+        if df.empty:
+            return []
+            
+        # SCORING
+        df['Score_ROIC'] = df['ROIC_5Y'].rank(pct=True) * 100
+        df['Score_Value'] = df['Value_Ratio'].rank(pct=True) * 100
+        df['Score_CFO'] = df['CFO_Quality'].rank(pct=True) * 100
+        df.loc[df['CFO_Quality'] < 0, 'Score_CFO'] = 0
+        df['Score_DE'] = df['DE_5Y'].rank(pct=True, ascending=False) * 100
+        
+        df['Total Score'] = (df['Score_ROIC'] * 0.4) + \
+                            (df['Score_Value'] * 0.3) + \
+                            (df['Score_CFO'] * 0.2) + \
+                            (df['Score_DE'] * 0.1)
+                            
+        df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
+        
+        # Fill NA and clean before returning
+        df = df.fillna(0)
+        
+        return df.to_dict('records')
 
 def get_stock_report(ticker, tax_rate_fallback=0.2):
     try:
+        try:
+            overview_df = Company(symbol=ticker, source='VCI').overview()
+            if not overview_df.empty:
+                company_name = overview_df.iloc[0].get('organ_name', ticker)
+                sector = overview_df.iloc[0].get('sector', '')
+            else:
+                company_name = ticker
+                sector = ""
+        except:
+            company_name = ticker
+            sector = ""
+            
+        if sector.lower() == 'ngân hàng':
+            f = Finance(symbol=ticker, source='KBS')
+            df_ratio = f.ratio(period='year')
+            df_bs = f.balance_sheet(period='year')
+            
+            if df_ratio is None or df_ratio.empty:
+                return None
+                
+            years_cols = [c for c in df_ratio.columns if str(c).startswith('20') and '-Năm' in str(c)]
+            if not years_cols:
+                years_cols = [c for c in df_ratio.columns if str(c).startswith('20')]
+                if not years_cols: return None
+                
+            years_cols = sorted(years_cols, reverse=True)
+            latest_year_str = years_cols[0]
+            
+            import re
+            match = re.search(r'\d{4}', str(latest_year_str))
+            if not match: return None
+            latest_year = int(match.group(0))
+            
+            history = []
+            num_years = min(len(years_cols), 5)
+            for i in range(num_years):
+                target_year_str = str(latest_year - i)
+                ratio_year_str = f"{target_year_str}-Năm" if f"{target_year_str}-Năm" in df_ratio.columns else target_year_str
+                bs_year_str = target_year_str
+                
+                npl = get_row_value(df_ratio, ["nợ xấu", "NPL"], ratio_year_str)
+                if npl == 0 and df_bs is not None and not df_bs.empty: npl = get_row_value(df_bs, ["nợ xấu", "NPL"], bs_year_str)
+                nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], ratio_year_str)
+                llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"], ratio_year_str)
+                pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
+                casa = get_row_value(df_ratio, ["CASA", "không kỳ hạn"], ratio_year_str)
+                if casa == 0 and df_bs is not None and not df_bs.empty: casa = get_row_value(df_bs, ["CASA", "không kỳ hạn"], bs_year_str)
+                
+                history.append({
+                    'year': target_year_str,
+                    'casa': float(casa) if casa else 0.0,
+                    'nim': float(nim) if nim else 0.0,
+                    'llr': float(llr) if llr else 0.0,
+                    'npl': float(npl) if npl else 0.0,
+                    'pb': float(pb) if pb else 0.0
+                })
+            
+            history.reverse()
+            return {
+                'ticker': ticker,
+                'company_name': company_name,
+                'sector': 'Ngân hàng',
+                'summary': {
+                    'CASA_Current': history[-1]['casa'] if history else 0,
+                    'NIM_Current': history[-1]['nim'] if history else 0,
+                    'LLR_Current': history[-1]['llr'] if history else 0,
+                    'NPL_Current': history[-1]['npl'] if history else 0,
+                    'PB_Current': history[-1]['pb'] if history else 0
+                },
+                'history': history
+            }
+            
         f = Finance(symbol=ticker, source='VCI')
         
         df_cf = f.cash_flow(period='year')
@@ -248,18 +393,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             return None
             
         latest_year = int(match.group(0))
-        
-        try:
-            overview_df = Company(symbol=ticker, source='VCI').overview()
-            if not overview_df.empty:
-                company_name = overview_df.iloc[0].get('organ_name', ticker)
-                sector = overview_df.iloc[0].get('sector', '')
-            else:
-                company_name = ticker
-                sector = ""
-        except:
-            company_name = ticker
-            sector = ""
         
         try:
             f_ratio = Finance(symbol=ticker, source='KBS')
@@ -379,25 +512,45 @@ def get_comparative_report(main_ticker, peers_str=""):
         return {'status': 'error', 'detail': f'Không tìm thấy dữ liệu cho mã chính {main_ticker}'}
         
     rank_data = []
+    is_bank = False
     for t, rep in reports.items():
         summary = rep['summary']
-        rank_data.append({
-            'ticker': t,
-            'ROIC_5Y': summary.get('ROIC_5Y', 0),
-            'BP_5Y': summary.get('BP_5Y', 0),
-            'CFO_Quality': summary.get('CFO_Quality', 0),
-            'ED_5Y': summary.get('ED_5Y', 0),
-            'ICR_Current': summary.get('ICR_Current', 0)
-        })
+        if rep['sector'].lower() == 'ngân hàng':
+            is_bank = True
+            rank_data.append({
+                'ticker': t,
+                'CASA_Current': summary.get('CASA_Current', 0),
+                'NIM_Current': summary.get('NIM_Current', 0),
+                'LLR_Current': summary.get('LLR_Current', 0),
+                'NPL_Current': summary.get('NPL_Current', 0),
+                'PB_Current': summary.get('PB_Current', 0)
+            })
+        else:
+            rank_data.append({
+                'ticker': t,
+                'ROIC_5Y': summary.get('ROIC_5Y', 0),
+                'BP_5Y': summary.get('BP_5Y', 0),
+                'CFO_Quality': summary.get('CFO_Quality', 0),
+                'ED_5Y': summary.get('ED_5Y', 0),
+                'ICR_Current': summary.get('ICR_Current', 0)
+            })
     
     df_rank = pd.DataFrame(rank_data)
     if not df_rank.empty:
-        df_rank['Score_ROIC'] = df_rank['ROIC_5Y'].rank(pct=True) * 40
-        df_rank['Score_BP'] = df_rank['BP_5Y'].rank(pct=True) * 30
-        df_rank['Score_CFO'] = df_rank['CFO_Quality'].rank(pct=True) * 15
-        df_rank['Score_ED'] = df_rank['ED_5Y'].rank(pct=True) * 10
-        df_rank['Score_ICR'] = df_rank['ICR_Current'].rank(pct=True) * 5
-        df_rank['Total_Score'] = df_rank['Score_ROIC'] + df_rank['Score_BP'] + df_rank['Score_CFO'] + df_rank['Score_ED'] + df_rank['Score_ICR']
+        if is_bank:
+            df_rank['Score_CASA'] = df_rank['CASA_Current'].rank(pct=True) * 20
+            df_rank['Score_NIM'] = df_rank['NIM_Current'].rank(pct=True) * 20
+            df_rank['Score_LLR'] = df_rank['LLR_Current'].rank(pct=True) * 15
+            df_rank['Score_NPL'] = df_rank['NPL_Current'].rank(pct=True, ascending=False) * 25
+            df_rank['Score_PB'] = df_rank['PB_Current'].rank(pct=True, ascending=False) * 20
+            df_rank['Total_Score'] = df_rank['Score_CASA'] + df_rank['Score_NIM'] + df_rank['Score_LLR'] + df_rank['Score_NPL'] + df_rank['Score_PB']
+        else:
+            df_rank['Score_ROIC'] = df_rank['ROIC_5Y'].rank(pct=True) * 40
+            df_rank['Score_BP'] = df_rank['BP_5Y'].rank(pct=True) * 30
+            df_rank['Score_CFO'] = df_rank['CFO_Quality'].rank(pct=True) * 15
+            df_rank['Score_ED'] = df_rank['ED_5Y'].rank(pct=True) * 10
+            df_rank['Score_ICR'] = df_rank['ICR_Current'].rank(pct=True) * 5
+            df_rank['Total_Score'] = df_rank['Score_ROIC'] + df_rank['Score_BP'] + df_rank['Score_CFO'] + df_rank['Score_ED'] + df_rank['Score_ICR']
         
         df_rank = df_rank.sort_values(by='Total_Score', ascending=False)
         ranking = df_rank.to_dict('records')

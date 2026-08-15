@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const spinner = document.querySelector('.spinner');
     const rankingContainer = document.getElementById('ranking-container');
     const rankingBody = document.getElementById('ranking-body');
+    const rankingHeader = document.getElementById('ranking-header');
 
     let charts = {}; // Store chart instances to destroy them later
 
@@ -97,25 +98,81 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
         
+        const isBank = (sector && sector.toLowerCase() === 'ngân hàng');
+
         // Render Ranking Table
         if (ranking && ranking.length > 1) {
             rankingContainer.style.display = 'block';
+            
+            if (isBank) {
+                rankingHeader.innerHTML = `
+                    <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CASA</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">LLR</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NPL</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B</th>
+                    </tr>
+                `;
+            } else {
+                rankingHeader.innerHTML = `
+                    <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">B/P</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO/NI</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">E/D</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ICR</th>
+                    </tr>
+                `;
+            }
+
             let html = '';
             ranking.forEach((r, idx) => {
                 const isMain = r.ticker === main_ticker;
                 const rowStyle = isMain ? 'background: rgba(56, 189, 248, 0.15); font-weight: bold; color: #fff;' : '';
-                html += `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
-                        <td style="padding: 12px;">${idx + 1}</td>
-                        <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
-                        <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
-                        <td style="padding: 12px;">${(r.ROIC_5Y * 100).toFixed(1)}%</td>
-                        <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
-                        <td style="padding: 12px;">${r.CFO_Quality.toFixed(2)}</td>
-                        <td style="padding: 12px;">${r.ED_5Y.toFixed(2)}</td>
-                        <td style="padding: 12px;">${r.ICR_Current.toFixed(2)}</td>
-                    </tr>
-                `;
+                
+                let pbStyle = '';
+                if (isBank) {
+                    // Highlight P/B in 1.0 - 1.2
+                    const pbVal = r.PB_Current;
+                    if (pbVal >= 1.0 && pbVal <= 1.2) {
+                        pbStyle = 'color: #10b981; font-weight: bold; text-shadow: 0 0 5px rgba(16,185,129,0.5);';
+                    }
+                }
+
+                if (isBank) {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
+                            <td style="padding: 12px;">${idx + 1}</td>
+                            <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
+                            <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
+                            <td style="padding: 12px;">${(r.CASA_Current * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${(r.NIM_Current * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${(r.LLR_Current * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${(r.NPL_Current * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px; ${pbStyle}">${r.PB_Current.toFixed(2)}</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
+                            <td style="padding: 12px;">${idx + 1}</td>
+                            <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
+                            <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
+                            <td style="padding: 12px;">${(r.ROIC_5Y * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.CFO_Quality.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.ED_5Y.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.ICR_Current.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
             });
             rankingBody.innerHTML = html;
         } else {
@@ -126,28 +183,53 @@ document.addEventListener('DOMContentLoaded', () => {
         const formatPct = (val) => (val * 100).toFixed(2) + '%';
         const formatNum = (val) => val.toFixed(2);
         
-        summaryCards.innerHTML = `
-            <div class="card">
-                <h3>ROIC (5Y Avg)</h3>
-                <p>${formatPct(summary.ROIC_5Y)}</p>
-            </div>
-            <div class="card">
-                <h3>Value Ratio</h3>
-                <p>${formatNum(summary.Value_Ratio)}</p>
-            </div>
-            <div class="card">
-                <h3>CFO Quality</h3>
-                <p>${formatNum(summary.CFO_Quality)}</p>
-            </div>
-            <div class="card">
-                <h3>D/E (5Y Avg)</h3>
-                <p>${formatNum(summary.DE_5Y)}</p>
-            </div>
-            <div class="card">
-                <h3>ICR (Current)</h3>
-                <p>${formatNum(summary.ICR_Current)}</p>
-            </div>
-        `;
+        if (isBank) {
+            summaryCards.innerHTML = `
+                <div class="card">
+                    <h3>CASA</h3>
+                    <p>${formatPct(summary.CASA_Current)}</p>
+                </div>
+                <div class="card">
+                    <h3>NIM</h3>
+                    <p>${formatPct(summary.NIM_Current)}</p>
+                </div>
+                <div class="card">
+                    <h3>LLR</h3>
+                    <p>${formatPct(summary.LLR_Current)}</p>
+                </div>
+                <div class="card">
+                    <h3>NPL</h3>
+                    <p>${formatPct(summary.NPL_Current)}</p>
+                </div>
+                <div class="card">
+                    <h3>P/B</h3>
+                    <p>${formatNum(summary.PB_Current)}</p>
+                </div>
+            `;
+        } else {
+            summaryCards.innerHTML = `
+                <div class="card">
+                    <h3>ROIC (5Y Avg)</h3>
+                    <p>${formatPct(summary.ROIC_5Y)}</p>
+                </div>
+                <div class="card">
+                    <h3>Value Ratio</h3>
+                    <p>${formatNum(summary.Value_Ratio)}</p>
+                </div>
+                <div class="card">
+                    <h3>CFO Quality</h3>
+                    <p>${formatNum(summary.CFO_Quality)}</p>
+                </div>
+                <div class="card">
+                    <h3>D/E (5Y Avg)</h3>
+                    <p>${formatNum(summary.DE_5Y)}</p>
+                </div>
+                <div class="card">
+                    <h3>ICR (Current)</h3>
+                    <p>${formatNum(summary.ICR_Current)}</p>
+                </div>
+            `;
+        }
         
         // Destroy old charts if exist
         Object.values(charts).forEach(chart => chart.destroy());
@@ -176,51 +258,94 @@ document.addEventListener('DOMContentLoaded', () => {
             const isMain = t === main_ticker;
             const borderWidth = isMain ? 3 : 2;
 
-            datasetsRoic.push({
-                label: `${t} ROIC (%)`,
-                data: hist.map(h => (h.roic * 100).toFixed(2)),
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                borderWidth: borderWidth,
-                tension: 0.4
-            });
+            if (isBank) {
+                datasetsRoic.push({
+                    label: `${t} CASA (%)`,
+                    data: hist.map(h => (h.casa * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsDe.push({
+                    label: `${t} NIM (%)`,
+                    data: hist.map(h => (h.nim * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsCfo.push({
+                    label: `${t} LLR (%)`,
+                    data: hist.map(h => (h.llr * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsBp.push({
+                    label: `${t} P/B`,
+                    data: hist.map(h => h.pb.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsIcr.push({
+                    label: `${t} NPL (%)`,
+                    data: hist.map(h => (h.npl * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+            } else {
+                datasetsRoic.push({
+                    label: `${t} ROIC (%)`,
+                    data: hist.map(h => (h.roic * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
 
-            datasetsDe.push({
-                label: `${t} D/E`,
-                data: hist.map(h => h.de.toFixed(2)),
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                borderWidth: borderWidth,
-                tension: 0.4
-            });
-            
-            // CFO Quality = CFO / NI
-            datasetsCfo.push({
-                label: `${t} CFO/NI`,
-                data: hist.map(h => (h.ni !== 0 ? (h.cfo / h.ni) : 0).toFixed(2)),
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                borderWidth: borderWidth,
-                tension: 0.4
-            });
+                datasetsDe.push({
+                    label: `${t} D/E`,
+                    data: hist.map(h => h.de.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                
+                // CFO Quality = CFO / NI
+                datasetsCfo.push({
+                    label: `${t} CFO/NI`,
+                    data: hist.map(h => (h.ni !== 0 ? (h.cfo / h.ni) : 0).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
 
-            datasetsBp.push({
-                label: `${t} B/P`,
-                data: hist.map(h => h.bp.toFixed(2)),
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                borderWidth: borderWidth,
-                tension: 0.4
-            });
+                datasetsBp.push({
+                    label: `${t} B/P`,
+                    data: hist.map(h => h.bp.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
 
-            datasetsIcr.push({
-                label: `${t} ICR`,
-                data: hist.map(h => h.icr.toFixed(2)),
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                borderWidth: borderWidth,
-                tension: 0.4
-            });
+                datasetsIcr.push({
+                    label: `${t} ICR`,
+                    data: hist.map(h => h.icr.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+            }
 
             colorIndex++;
         }
@@ -263,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update titles if necessary (CFO vs NI is now CFO/NI)
         const cfChartH3 = document.querySelector('#cfChart').parentElement.querySelector('h3');
         if (cfChartH3) {
-            cfChartH3.textContent = 'CFO / Net Income (CFO Quality)';
+            cfChartH3.textContent = isBank ? 'LLR (%)' : 'CFO / Net Income (CFO Quality)';
         }
 
         reportContainer.style.display = 'block';
