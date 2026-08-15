@@ -464,6 +464,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 if llr: llr = abs(llr)
                     
                 pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
+                pe = get_row_value(df_ratio, ["P/E", "Chỉ số giá thị trường trên thu nhập (P/E)"], ratio_year_str)
+                ep = 1 / pe if pe and pe != 0 else 0
                 
                 casa = 0.0
                 npl = 0.0
@@ -492,7 +494,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'nim': float(nim) if nim else 0.0,
                     'llr': float(llr) if llr else 0.0,
                     'npl': npl,
-                    'pb': float(pb) if pb else 0.0
+                    'pb': float(pb) if pb else 0.0,
+                    'ep': float(ep) if ep else 0.0
                 })
             
             history.reverse()
@@ -597,6 +600,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             ratio_year_str = f"{target_year_str}-Năm"
             pb = get_row_value(df_ratio, ["P/B", "Chỉ số giá thị trường trên giá trị sổ sách (P/B)"], year_str=ratio_year_str)
             bp = 1 / pb if pb > 0 else 0
+            pe = get_row_value(df_ratio, ["P/E", "Chỉ số giá thị trường trên thu nhập (P/E)"], year_str=ratio_year_str)
+            ep = 1 / pe if pe and pe != 0 else 0
             
             # Tính ICR
             icr = get_row_value(df_ratio, ["Khả năng thanh toán lãi vay", "ICR"], year_str=ratio_year_str)
@@ -608,7 +613,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'cfo': cfo,
                 'ni': ni,
                 'bp': bp,
-                'icr': icr
+                'icr': icr,
+                'ep': ep
             })
             
         # Reverse history so it is chronological (oldest to newest)

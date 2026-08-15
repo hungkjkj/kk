@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let datasetsCfo = [];
         let datasetsBp = [];
         let datasetsIcr = [];
+        let datasetsEp = [];
 
         let colorIndex = 0;
         
@@ -309,6 +310,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: borderWidth,
                     tension: 0.4
                 });
+                datasetsEp.push({
+                    label: `${t} E/P (%)`,
+                    data: hist.map(h => (h.ep * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
             } else {
                 datasetsRoic.push({
                     label: `${t} ROIC (%)`,
@@ -355,6 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: borderWidth,
                     tension: 0.4
                 });
+                datasetsEp.push({
+                    label: `${t} E/P (%)`,
+                    data: hist.map(h => (h.ep * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
             }
 
             colorIndex++;
@@ -394,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         charts.cf = createLineChart('cfChart', datasetsCfo);
         charts.bp = createLineChart('bpChart', datasetsBp);
         charts.icr = createLineChart('icrChart', datasetsIcr);
+        charts.ep = createLineChart('epChart', datasetsEp);
 
         // Update titles if necessary (CFO vs NI is now CFO/NI)
         const cfChartH3 = document.querySelector('#cfChart').parentElement.querySelector('h3');
@@ -404,6 +422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const bpChartH3 = document.querySelector('#bpChart').parentElement.querySelector('h3');
         if (bpChartH3) {
             bpChartH3.textContent = 'P/B';
+        }
+
+        const epChartH3 = document.querySelector('#epChart').parentElement.querySelector('h3');
+        if (epChartH3) {
+            epChartH3.textContent = 'E/P (%)';
         }
 
         reportContainer.style.display = 'block';
