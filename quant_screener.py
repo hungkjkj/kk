@@ -5,7 +5,7 @@ import warnings
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
-from vnstock import Listing, Finance, Vnstock
+from vnstock import Listing, Finance, Vnstock, Company
 
 def get_available_sectors():
     """ Trả về danh sách tất cả các ngành nghề trên thị trường. """
@@ -250,6 +250,18 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         latest_year = int(match.group(0))
         
         try:
+            overview_df = Company(symbol=ticker, source='VCI').overview()
+            if not overview_df.empty:
+                company_name = overview_df.iloc[0].get('organ_name', ticker)
+                sector = overview_df.iloc[0].get('sector', '')
+            else:
+                company_name = ticker
+                sector = ""
+        except:
+            company_name = ticker
+            sector = ""
+        
+        try:
             f_ratio = Finance(symbol=ticker, source='KBS')
             df_ratio = f_ratio.ratio(period='year')
         except:
@@ -325,6 +337,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
 
         return {
             'ticker': ticker,
+            'company_name': company_name,
+            'sector': sector,
             'summary': {
                 'ROIC_5Y': avg_roic_5y,
                 'Value_Ratio': value_ratio,

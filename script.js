@@ -56,7 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderReport(data) {
-        const { summary, history } = data;
+        const { ticker, company_name, sector, summary, history } = data;
+        
+        // Render Company Info
+        const companyInfo = document.getElementById('company-info');
+        if (companyInfo) {
+            companyInfo.innerHTML = `
+                <h2 style="color: var(--text-color); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">${company_name || ticker}</h2>
+                <p style="color: #94a3b8; font-size: 1.1rem; letter-spacing: 0.05em; text-transform: uppercase;">Lĩnh vực: <span style="color: var(--primary-color);">${sector || 'Chưa phân loại'}</span></p>
+            `;
+        }
         
         // Render Summary
         const formatPct = (val) => (val * 100).toFixed(2) + '%';
