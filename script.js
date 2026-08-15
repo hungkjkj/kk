@@ -123,11 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">B/P</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO/NI</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">E/D</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ICR</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC (5Y)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC (TTM)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">B/P (5Y)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO/NI (TTM)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">D/E (Cur)</th>
                     </tr>
                 `;
             }
@@ -166,10 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
                             <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
                             <td style="padding: 12px;">${(r.ROIC_5Y * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${(r.ROIC_TTM * 100).toFixed(1)}%</td>
                             <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
-                            <td style="padding: 12px;">${r.CFO_Quality.toFixed(2)}</td>
-                            <td style="padding: 12px;">${r.ED_5Y.toFixed(2)}</td>
-                            <td style="padding: 12px;">${r.ICR_Current.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.CFO_Quality_TTM.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.DE_Current.toFixed(2)}</td>
                         </tr>
                     `;
                 }
@@ -209,20 +209,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             summaryCards.innerHTML = `
                 <div class="card">
-                    <h3>ROIC (5Y Avg)</h3>
-                    <p>${formatPct(summary.ROIC_5Y)}</p>
+                    <h3>ROIC (TTM / 5Y)</h3>
+                    <p>${formatPct(summary.ROIC_TTM)} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}</span></p>
                 </div>
                 <div class="card">
                     <h3>Value Ratio</h3>
                     <p>${formatNum(summary.Value_Ratio)}</p>
                 </div>
                 <div class="card">
-                    <h3>CFO Quality</h3>
-                    <p>${formatNum(summary.CFO_Quality)}</p>
+                    <h3>CFO Quality (TTM)</h3>
+                    <p>${formatNum(summary.CFO_Quality_TTM)}</p>
                 </div>
                 <div class="card">
-                    <h3>D/E (5Y Avg)</h3>
-                    <p>${formatNum(summary.DE_5Y)}</p>
+                    <h3>D/E (Current)</h3>
+                    <p>${formatNum(summary.DE_Current)}</p>
                 </div>
                 <div class="card">
                     <h3>ICR (Current)</h3>
