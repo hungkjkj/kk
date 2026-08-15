@@ -63,6 +63,7 @@ def get_row_value(df, keywords, year_str, default=0):
                         pass
     except Exception as e:
         pass
+    return default
 def get_top_market_cap(tickers, limit=10):
     """ Lấy danh sách Top 10 mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
     try:
@@ -227,7 +228,6 @@ def run_screener_for_sector(sector):
 def get_stock_report(ticker, tax_rate_fallback=0.2):
     try:
         f = Finance(symbol=ticker, source='VCI')
-        f_tcbs = Finance(symbol=ticker, source='TCBS')
         
         df_cf = f.cash_flow(period='year')
         df_is = f.income_statement(period='year')
@@ -259,16 +259,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 market_cap = df_ratio['market_cap'].iloc[0]
         if market_cap < 1000000: 
             market_cap = market_cap * 1e9
-            
-        # Lấy P/B lịch sử từ TCBS nếu có
-        historical_pb = {}
-        try:
-            df_tcbs_ratio = f_tcbs.ratio(period='year')
-            if not df_tcbs_ratio.empty and 'priceToBook' in df_tcbs_ratio.columns and 'year' in df_tcbs_ratio.columns:
-                for _, row in df_tcbs_ratio.iterrows():
-                    historical_pb[str(row['year'])] = row['priceToBook']
-        except:
-            pass
 
         num_years = min(len(years_cols), 5)
         
@@ -300,12 +290,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             de = debt / equity if equity > 0 else 0
             
             # Tính B/P
-            # Nếu có P/B lịch sử từ TCBS thì dùng nghịch đảo, ngược lại dùng Equity / current_market_cap
-            pb = historical_pb.get(target_year_str, 0)
-            if pb > 0:
-                bp = 1 / pb
-            else:
-                bp = equity / market_cap if market_cap > 0 else 0
+            bp = equity / market_cap if market_cap > 0 else 0
                 
             history.append({
                 'year': target_year_str,
