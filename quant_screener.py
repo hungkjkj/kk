@@ -333,6 +333,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         avg_bp = np.mean(bp_list) if bp_list else 0
         value_ratio = avg_bp / avg_roic_5y if avg_roic_5y > 0 else 0
         
+        ed_list = [1 / h['de'] if h['de'] > 0 else 1000 for h in history]
+        avg_ed_5y = np.mean(ed_list) if ed_list else 0
+        
         current_icr = history[-1]['icr'] if history else 0
 
         return {
@@ -342,6 +345,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             'summary': {
                 'ROIC_5Y': avg_roic_5y,
                 'Value_Ratio': value_ratio,
+                'BP_5Y': avg_bp,
+                'ED_5Y': avg_ed_5y,
                 'CFO_Quality': cfo_quality,
                 'DE_5Y': avg_de_5y,
                 'ICR_Current': current_icr
@@ -351,3 +356,54 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
     except Exception as e:
         print("Lỗi khi lấy dữ liệu:", e)
         return None
+
+def get_comparative_report(main_ticker, peers_str=""):
+    import re
+    tickers = [main_ticker]
+    if peers_str:
+        peers = [p.strip().upper() for p in re.split(r'[,\s]+', peers_str) if p.strip()]
+        for p in peers:
+            if p not in tickers:
+                tickers.append(p)
+                
+    reports = {}
+    for t in tickers:
+        rep = get_stock_report(t)
+        if rep:
+            reports[t] = rep
+            
+    if main_ticker not in reports:
+        return {'status': 'error', 'detail': f'Không tìm thấy dữ liệu cho mã chính {main_ticker}'}
+        
+    rank_data = []
+    for t, rep in reports.items():
+        summary = rep['summary']
+        rank_data.append({
+            'ticker': t,
+            'ROIC_5Y': summary.get('ROIC_5Y', 0),
+            'BP_5Y': summary.get('BP_5Y', 0),
+            'CFO_Quality': summary.get('CFO_Quality', 0),
+            'ED_5Y': summary.get('ED_5Y', 0),
+            'ICR_Current': summary.get('ICR_Current', 0)
+        })
+    
+    df_rank = pd.DataFrame(rank_data)
+    if not df_rank.empty:
+        df_rank['Score_ROIC'] = df_rank['ROIC_5Y'].rank(pct=True) * 40
+        df_rank['Score_BP'] = df_rank['BP_5Y'].rank(pct=True) * 30
+        df_rank['Score_CFO'] = df_rank['CFO_Quality'].rank(pct=True) * 15
+        df_rank['Score_ED'] = df_rank['ED_5Y'].rank(pct=True) * 10
+        df_rank['Score_ICR'] = df_rank['ICR_Current'].rank(pct=True) * 5
+        df_rank['Total_Score'] = df_rank['Score_ROIC'] + df_rank['Score_BP'] + df_rank['Score_CFO'] + df_rank['Score_ED'] + df_rank['Score_ICR']
+        
+        df_rank = df_rank.sort_values(by='Total_Score', ascending=False)
+        ranking = df_rank.to_dict('records')
+    else:
+        ranking = []
+        
+    return {
+        'status': 'success',
+        'main_ticker': main_ticker,
+        'reports': reports,
+        'ranking': ranking
+    }

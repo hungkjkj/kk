@@ -1,44 +1,62 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tickerInput = document.getElementById('ticker-input');
+    const peerInput = document.getElementById('peer-input');
     const runBtn = document.getElementById('run-btn');
     const statusMessage = document.getElementById('status-message');
     const reportContainer = document.getElementById('report-container');
     const summaryCards = document.getElementById('summary-cards');
     const btnText = document.querySelector('.btn-text');
     const spinner = document.querySelector('.spinner');
+    const rankingContainer = document.getElementById('ranking-container');
+    const rankingBody = document.getElementById('ranking-body');
 
     let charts = {}; // Store chart instances to destroy them later
 
+    // Color palette for different companies
+    const chartColors = [
+        { border: '#38bdf8', bg: 'rgba(56, 189, 248, 0.1)' }, // Main (Blue)
+        { border: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)' }, // Yellow
+        { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' }, // Green
+        { border: '#f43f5e', bg: 'rgba(244, 63, 94, 0.1)' }, // Pink
+        { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' }  // Purple
+    ];
+
     runBtn.addEventListener('click', () => {
         const ticker = tickerInput.value.trim().toUpperCase();
+        const peers = peerInput.value.trim().toUpperCase();
         if (!ticker) {
-            showError('Vui lòng nhập mã cổ phiếu.');
+            showError('Vui lòng nhập mã cổ phiếu chính.');
             return;
         }
-        runReport(ticker);
+        runReport(ticker, peers);
     });
     
     tickerInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') runBtn.click();
     });
+    peerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') runBtn.click();
+    });
 
-    async function runReport(ticker) {
+    async function runReport(ticker, peers) {
         // UI Loading state
         runBtn.disabled = true;
         tickerInput.disabled = true;
+        peerInput.disabled = true;
         btnText.textContent = 'Đang phân tích...';
         spinner.style.display = 'block';
         reportContainer.style.display = 'none';
-        statusMessage.textContent = `Hệ thống đang tải dữ liệu cho mã "${ticker}". Vui lòng đợi...`;
+        statusMessage.textContent = `Hệ thống đang tải dữ liệu cho mã "${ticker}"${peers ? ` và các mã so sánh` : ''}. Vui lòng đợi...`;
         statusMessage.style.color = '#38bdf8';
 
         try {
-            const response = await fetch(`/api/report?ticker=${encodeURIComponent(ticker)}`);
+            const queryParams = new URLSearchParams({ ticker: ticker, peers: peers });
+            const response = await fetch(`/api/report?${queryParams.toString()}`);
             const data = await response.json();
 
             if (data.status === 'success' && data.data) {
                 renderReport(data.data);
-                statusMessage.textContent = `Đã phân tích xong dữ liệu cho ${ticker}!`;
+                statusMessage.textContent = `Đã phân tích xong dữ liệu!`;
                 statusMessage.style.color = 'var(--success-color)';
             } else {
                 showError(data.detail || 'Có lỗi xảy ra trong quá trình lấy dữ liệu.');
@@ -50,24 +68,58 @@ document.addEventListener('DOMContentLoaded', () => {
             // Restore UI
             runBtn.disabled = false;
             tickerInput.disabled = false;
+            peerInput.disabled = false;
             btnText.textContent = 'Phân tích';
             spinner.style.display = 'none';
         }
     }
 
     function renderReport(data) {
-        const { ticker, company_name, sector, summary, history } = data;
+        const { main_ticker, reports, ranking } = data;
+        
+        const mainReport = reports[main_ticker];
+        if (!mainReport) {
+            showError('Không lấy được dữ liệu cho mã chính.');
+            return;
+        }
+
+        const { company_name, sector, summary, history } = mainReport;
         
         // Render Company Info
         const companyInfo = document.getElementById('company-info');
         if (companyInfo) {
             companyInfo.innerHTML = `
-                <h2 style="color: var(--text-color); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">${company_name || ticker}</h2>
+                <h2 style="color: var(--text-color); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">${company_name || main_ticker}</h2>
                 <p style="color: #94a3b8; font-size: 1.1rem; letter-spacing: 0.05em; text-transform: uppercase;">Lĩnh vực: <span style="color: var(--primary-color);">${sector || 'Chưa phân loại'}</span></p>
             `;
         }
         
-        // Render Summary
+        // Render Ranking Table
+        if (ranking && ranking.length > 1) {
+            rankingContainer.style.display = 'block';
+            let html = '';
+            ranking.forEach((r, idx) => {
+                const isMain = r.ticker === main_ticker;
+                const rowStyle = isMain ? 'background: rgba(56, 189, 248, 0.15); font-weight: bold; color: #fff;' : '';
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
+                        <td style="padding: 12px;">${idx + 1}</td>
+                        <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
+                        <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
+                        <td style="padding: 12px;">${(r.ROIC_5Y * 100).toFixed(1)}%</td>
+                        <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
+                        <td style="padding: 12px;">${r.CFO_Quality.toFixed(2)}</td>
+                        <td style="padding: 12px;">${r.ED_5Y.toFixed(2)}</td>
+                        <td style="padding: 12px;">${r.ICR_Current.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            rankingBody.innerHTML = html;
+        } else {
+            rankingContainer.style.display = 'none';
+        }
+
+        // Render Summary (Always for main ticker)
         const formatPct = (val) => (val * 100).toFixed(2) + '%';
         const formatNum = (val) => val.toFixed(2);
         
@@ -98,8 +150,78 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.values(charts).forEach(chart => chart.destroy());
         charts = {};
         
+        // Prepare datasets for charts
         const labels = history.map(h => h.year);
         
+        let datasetsRoic = [];
+        let datasetsDe = [];
+        let datasetsCfo = [];
+        let datasetsBp = [];
+        let datasetsIcr = [];
+
+        let colorIndex = 0;
+        
+        // We want main ticker to be first
+        const tickersToPlot = [main_ticker, ...Object.keys(reports).filter(t => t !== main_ticker)];
+
+        for (const t of tickersToPlot) {
+            const rep = reports[t];
+            if (!rep || !rep.history) continue;
+            
+            const hist = rep.history;
+            const c = chartColors[colorIndex % chartColors.length];
+            const isMain = t === main_ticker;
+            const borderWidth = isMain ? 3 : 2;
+
+            datasetsRoic.push({
+                label: `${t} ROIC (%)`,
+                data: hist.map(h => (h.roic * 100).toFixed(2)),
+                borderColor: c.border,
+                backgroundColor: c.bg,
+                borderWidth: borderWidth,
+                tension: 0.4
+            });
+
+            datasetsDe.push({
+                label: `${t} D/E`,
+                data: hist.map(h => h.de.toFixed(2)),
+                borderColor: c.border,
+                backgroundColor: c.bg,
+                borderWidth: borderWidth,
+                tension: 0.4
+            });
+            
+            // CFO Quality = CFO / NI
+            datasetsCfo.push({
+                label: `${t} CFO/NI`,
+                data: hist.map(h => (h.ni !== 0 ? (h.cfo / h.ni) : 0).toFixed(2)),
+                borderColor: c.border,
+                backgroundColor: c.bg,
+                borderWidth: borderWidth,
+                tension: 0.4
+            });
+
+            datasetsBp.push({
+                label: `${t} B/P`,
+                data: hist.map(h => h.bp.toFixed(2)),
+                borderColor: c.border,
+                backgroundColor: c.bg,
+                borderWidth: borderWidth,
+                tension: 0.4
+            });
+
+            datasetsIcr.push({
+                label: `${t} ICR`,
+                data: hist.map(h => h.icr.toFixed(2)),
+                borderColor: c.border,
+                backgroundColor: c.bg,
+                borderWidth: borderWidth,
+                tension: 0.4
+            });
+
+            colorIndex++;
+        }
+
         // Setup Charts
         Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
         Chart.defaults.font.family = 'Inter';
@@ -108,8 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'top' }
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
             },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
             scales: {
                 y: { grid: { color: 'rgba(255, 255, 255, 0.1)' } },
                 x: { 
@@ -119,117 +243,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // ROIC Chart
-        const ctxRoic = document.getElementById('roicChart').getContext('2d');
-        charts.roic = new Chart(ctxRoic, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'ROIC (%)',
-                    data: history.map(h => (h.roic * 100).toFixed(2)),
-                    borderColor: '#38bdf8',
-                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: commonOptions
-        });
+        const createLineChart = (ctxId, datasets) => {
+            return new Chart(document.getElementById(ctxId).getContext('2d'), {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: commonOptions
+            });
+        };
 
-        // D/E Chart
-        const ctxDe = document.getElementById('deChart').getContext('2d');
-        charts.de = new Chart(ctxDe, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'D/E Ratio',
-                    data: history.map(h => h.de.toFixed(2)),
-                    backgroundColor: '#fbbf24',
-                }]
-            },
-            options: {
-                ...commonOptions,
-                scales: {
-                    ...commonOptions.scales,
-                    y: { ...commonOptions.scales.y, beginAtZero: true }
-                }
-            }
-        });
+        charts.roic = createLineChart('roicChart', datasetsRoic);
+        charts.de = createLineChart('deChart', datasetsDe);
+        charts.cf = createLineChart('cfChart', datasetsCfo);
+        charts.bp = createLineChart('bpChart', datasetsBp);
+        charts.icr = createLineChart('icrChart', datasetsIcr);
 
-        // CFO vs NI Chart
-        const ctxCf = document.getElementById('cfChart').getContext('2d');
-        charts.cf = new Chart(ctxCf, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'CFO (Tỷ VNĐ)',
-                        data: history.map(h => (h.cfo / 1e9).toFixed(1)),
-                        backgroundColor: '#10b981',
-                    },
-                    {
-                        label: 'Net Income (Tỷ VNĐ)',
-                        data: history.map(h => (h.ni / 1e9).toFixed(1)),
-                        backgroundColor: '#f43f5e',
-                    }
-                ]
-            },
-            options: {
-                ...commonOptions,
-                scales: {
-                    ...commonOptions.scales,
-                    y: { ...commonOptions.scales.y, beginAtZero: true }
-                }
-            }
-        });
-
-        // B/P Chart
-        const ctxBp = document.getElementById('bpChart').getContext('2d');
-        charts.bp = new Chart(ctxBp, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'B/P Ratio',
-                    data: history.map(h => h.bp.toFixed(2)),
-                    borderColor: '#a855f7',
-                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                ...commonOptions,
-                scales: {
-                    ...commonOptions.scales,
-                    y: { ...commonOptions.scales.y, beginAtZero: true }
-                }
-            }
-        });
-
-        // ICR Chart
-        const ctxIcr = document.getElementById('icrChart').getContext('2d');
-        charts.icr = new Chart(ctxIcr, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Interest Coverage Ratio (ICR)',
-                    data: history.map(h => h.icr.toFixed(2)),
-                    backgroundColor: '#14b8a6', // Teal color
-                }]
-            },
-            options: {
-                ...commonOptions,
-                scales: {
-                    ...commonOptions.scales,
-                    y: { ...commonOptions.scales.y, beginAtZero: true }
-                }
-            }
-        });
+        // Update titles if necessary (CFO vs NI is now CFO/NI)
+        document.querySelector('#cfChart').parentElement.querySelector('h3').textContent = 'CFO / Net Income (CFO Quality)';
 
         reportContainer.style.display = 'block';
     }
@@ -238,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.textContent = msg;
         statusMessage.style.color = 'var(--danger-color)';
         tickerInput.disabled = false;
+        peerInput.disabled = false;
         runBtn.disabled = false;
     }
 });

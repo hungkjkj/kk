@@ -14,16 +14,20 @@
         <div class="blob blob-2"></div>
     </div>
 
-    <div class="container">
+    <main class="container">
         <header>
             <h1>Trader Xuất Chúng</h1>
             <p>Hệ thống định lượng tìm kiếm siêu cổ phiếu</p>
         </header>
 
-        <div class="control-panel glass">
-            <div class="input-group">
-                <label for="ticker-input">Nhập mã cổ phiếu:</label>
-                <input type="text" id="ticker-input" placeholder="VD: FPT, HPG..." style="text-transform: uppercase;">
+        <div class="control-panel glass" style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; position: relative;">
+                <i class="fas fa-search search-icon" style="position: absolute; left: 1rem; color: #94a3b8;"></i>
+                <input type="text" id="ticker-input" placeholder="Nhập mã CP (VD: FPT)" style="padding-left: 2.5rem; text-transform: uppercase;">
+            </div>
+            <div style="display: flex; align-items: center; position: relative;">
+                <i class="fas fa-users search-icon" style="position: absolute; left: 1rem; color: #94a3b8;"></i>
+                <input type="text" id="peer-input" placeholder="Mã so sánh (VD: CMG ELC)" style="padding-left: 2.5rem; text-transform: uppercase;">
             </div>
             <button id="run-btn">
                 <span class="btn-text">Phân tích</span>
@@ -35,6 +39,31 @@
 
         <div class="report-container glass" id="report-container" style="display: none;">
             <div id="company-info" style="text-align: center; margin-bottom: 2rem;"></div>
+            
+            <!-- Khu vực xếp hạng -->
+            <div id="ranking-container" style="margin-bottom: 2rem; display: none;">
+                <h3 style="color: var(--text-color); margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;"><i class="fas fa-trophy" style="color: #fbbf24;"></i> Xếp hạng Sức mạnh</h3>
+                <div class="table-responsive" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">B/P</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO/NI</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">E/D</th>
+                                <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ICR</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-body">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="summary-cards" id="summary-cards">
                 <!-- Summary will be injected here -->
             </div>
