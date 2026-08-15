@@ -142,7 +142,7 @@ def calculate_engine_bank(ticker):
         df_bs = f.balance_sheet(period='year')
         
         try:
-            df_ratio_q = f.ratio(period='quarter')
+            df_ratio_q = Finance(symbol=ticker, source='VCI').ratio(period='quarter')
             df_bs_q = f.balance_sheet(period='quarter')
         except:
             df_ratio_q, df_bs_q = None, None
@@ -176,7 +176,7 @@ def calculate_engine_bank(ticker):
              
         nim = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
         if nim == 0: nim = get_row_value(df_ratio, ["NIM", "lãi thuần", "thu nhập lãi thuần"], latest_year_str)
-        if nim: nim = nim / 100
+        if nim and abs(nim) > 0.5: nim = nim / 100
             
         llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"])
         if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], latest_year_str)
@@ -458,7 +458,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 bs_year_str = target_year_str
                 
                 nim = get_row_value(df_ratio, ["NIM", "lãi thuần", "thu nhập lãi thuần"], ratio_year_str)
-                if nim: nim = nim / 100
+                if nim and abs(nim) > 0.5: nim = nim / 100
                     
                 llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], ratio_year_str)
                 if llr: llr = abs(llr)
@@ -498,7 +498,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             history.reverse()
             
             try:
-                df_ratio_q = f.ratio(period='quarter')
+                df_ratio_q = Finance(symbol=ticker, source='VCI').ratio(period='quarter')
                 df_bs_q = f.balance_sheet(period='quarter')
             except:
                 df_ratio_q, df_bs_q = None, None
@@ -508,7 +508,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
             nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
             if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
-            if nim_q: nim_q = nim_q / 100
+            if nim_q and abs(nim_q) > 0.5: nim_q = nim_q / 100
                 
             llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"]) # removed "Dự phòng rủi ro tín dụng/Tổng dư nợ" because it fetches provision expense, not NPL coverage
             if llr_q == 0: llr_q = history[-1]['llr'] if history else 0
@@ -646,17 +646,17 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         cfo_quality_ttm = 0
         de_current = 0
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
-            ebt_ttm = get_ttm_value(df_is_q, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
+            ebt_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
             tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
-            ni_ttm = get_ttm_value(df_is_q, ["Lợi nhuận sau thuế", "Net income"])
-            ebit_ttm = get_ttm_value(df_is_q, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
+            ni_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) thuần sau thuế", "Lợi nhuận của Cổ đông của Công ty mẹ", "Lợi nhuận sau thuế", "Net income"])
+            ebit_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) từ hoạt động kinh doanh", "Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
             if ebit_ttm == 0: ebit_ttm = ebt_ttm
-            cfo_ttm = get_ttm_value(df_cf_q, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"]) if df_cf_q is not None else 0
+            cfo_ttm = get_ttm_value(df_cf_q, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"]) if df_cf_q is not None else 0
             tax_rate_ttm = tax_ttm / ebt_ttm if ebt_ttm > 0 else tax_rate_fallback
             tax_rate_ttm = max(0.0, min(0.22, tax_rate_ttm))
             equity_q = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"])
             debt_q = get_latest_q_value(df_bs_q, ["Nợ phải trả", "Liabilities", "Tổng nợ"])
-            cash_q = get_latest_q_value(df_bs_q, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"])
+            cash_q = get_latest_q_value(df_bs_q, ["Tiền và tương đương tiền", "Tiền và các khoản tương đương tiền", "Cash and cash equivalents"])
             invested_capital_q = equity_q + debt_q - cash_q
             if invested_capital_q > 0: roic_ttm = (ebit_ttm * (1 - tax_rate_ttm)) / invested_capital_q
             if equity_q > 0: de_current = debt_q / equity_q
@@ -698,7 +698,7 @@ def get_comparative_report(main_ticker, peers_str=""):
                 
     reports = {}
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_to_ticker = {executor.submit(get_stock_report, t): t for t in tickers}
         for future in concurrent.futures.as_completed(future_to_ticker):
             t = future_to_ticker[future]
