@@ -479,6 +479,13 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                         n_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('Nợ xấu', case=False, na=False)]
                         if not n_match.empty:
                             npl = float(n_match.iloc[0, 3+i])
+                            
+                        l_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('DP rủi ro/Nợ xấu', case=False, na=False)]
+                        if not l_match.empty:
+                            l_val = float(l_match.iloc[0, 3+i])
+                            if l_val:
+                                llr = abs(l_val)
+                                if llr > 1: llr = llr / 100
                     except:
                         pass
                 
@@ -490,6 +497,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'npl': npl,
                     'pb': float(pb) if pb else 0.0
                 })
+            
+            history.reverse()
             
             try:
                 df_ratio_q = f.ratio(period='quarter')
