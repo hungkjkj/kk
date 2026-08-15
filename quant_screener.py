@@ -176,12 +176,12 @@ def calculate_engine_bank(ticker):
              
         nim = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần"])
         if nim == 0: nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], latest_year_str)
-        if nim and nim > 1: nim = nim / 100
+        if nim: nim = nim / 100
             
-        llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"])
-        if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"], latest_year_str)
+        llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR"])
+        if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR"], latest_year_str)
         if llr: llr = abs(llr)
-        if llr and llr > 10: llr = llr / 100
+        if llr and llr > 1: llr = llr / 100
             
         pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
         if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
@@ -459,11 +459,11 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 bs_year_str = target_year_str
                 
                 nim = get_row_value(df_ratio, ["NIM", "lãi thuần"], ratio_year_str)
-                if nim and nim > 1: nim = nim / 100
+                if nim: nim = nim / 100
                     
-                llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"], ratio_year_str)
+                llr = get_row_value(df_ratio, ["Bao phủ", "LLR"], ratio_year_str)
                 if llr: llr = abs(llr)
-                if llr and llr > 10: llr = llr / 100
+                if llr and llr > 1: llr = llr / 100
                     
                 pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], ratio_year_str)
                 
@@ -502,13 +502,13 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
             nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần"])
             if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
-            elif nim_q > 1: nim_q = nim_q / 100
+            if nim_q: nim_q = nim_q / 100
                 
-            llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "Dự phòng rủi ro tín dụng/Tổng dư nợ"])
+            llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR"]) # removed "Dự phòng rủi ro tín dụng/Tổng dư nợ" because it fetches provision expense, not NPL coverage
             if llr_q == 0: llr_q = history[-1]['llr'] if history else 0
             else:
                 llr_q = abs(llr_q)
-                if llr_q > 10: llr_q = llr_q / 100
+                if llr_q > 1: llr_q = llr_q / 100
                 
             pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
             if pb_q == 0: pb_q = history[-1]['pb'] if history else 0

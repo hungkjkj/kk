@@ -59,9 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.status === 'success' && data.data) {
+                const totalRequested = peersArr.length + 1;
+                if (data.data.ranking && data.data.ranking.length > 0 && data.data.ranking.length < totalRequested) {
+                    showStatus(`Đã phân tích xong dữ liệu! (Lưu ý: Một số mã đối thủ không hợp lệ hoặc không có dữ liệu)`, false);
+                } else {
+                    showStatus('Đã phân tích xong dữ liệu!', false);
+                }
                 renderReport(data.data);
-                statusMessage.textContent = `Đã phân tích xong dữ liệu!`;
-                statusMessage.style.color = 'var(--success-color)';
+                reportContainer.style.display = 'block';
             } else {
                 showError(data.detail || 'Có lỗi xảy ra trong quá trình lấy dữ liệu.');
             }
@@ -101,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isBank = (sector && (sector.toLowerCase() === 'ngân hàng' || sector.toLowerCase() === 'banks'));
 
         // Render Ranking Table
-        if (ranking && ranking.length > 1) {
+        if (ranking && ranking.length > 0) {
             rankingContainer.style.display = 'block';
             
             if (isBank) {
