@@ -767,13 +767,34 @@ def get_comparative_report(main_ticker, peers_str=""):
     
     import math
     def sanitize(obj):
+        import math
+        import pandas as pd
+        import numpy as np
+        
         if isinstance(obj, dict):
             return {k: sanitize(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [sanitize(v) for v in obj]
-        elif isinstance(obj, float):
-            if math.isnan(obj) or math.isinf(obj):
+            
+        if isinstance(obj, bool):
+            return obj
+            
+        try:
+            if pd.isna(obj):
                 return 0
+        except Exception:
+            pass
+            
+        try:
+            if isinstance(obj, (float, np.floating)):
+                if np.isinf(obj) or np.isnan(obj):
+                    return 0
+                return float(obj)
+            elif isinstance(obj, (int, np.integer)):
+                return int(obj)
+        except Exception:
+            pass
+            
         return obj
         
     return sanitize(result_dict)
