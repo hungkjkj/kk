@@ -444,4 +444,32 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.peer-input').forEach(el => el.disabled = false);
         runBtn.disabled = false;
     }
+
+    const copyReportBtn = document.getElementById('copy-report-btn');
+    if (copyReportBtn) {
+        copyReportBtn.addEventListener('click', () => {
+            const ticker = document.getElementById('company-info')?.querySelector('h2')?.innerText || 'Cổ phiếu';
+            const cards = document.querySelectorAll('#summary-cards .card');
+            if (cards.length === 0) return;
+
+            let textToCopy = `Báo cáo chỉ số: ${ticker}\n`;
+            textToCopy += '----------------------\n';
+            cards.forEach(card => {
+                const title = card.querySelector('h3').innerText;
+                const value = card.querySelector('p').innerText.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+                textToCopy += `${title}: ${value}\n`;
+            });
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = copyReportBtn.innerHTML;
+                copyReportBtn.innerHTML = '<i class="fas fa-check"></i> Đã sao chép';
+                setTimeout(() => {
+                    copyReportBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Lỗi sao chép, vui lòng thử lại.');
+            });
+        });
+    }
 });
