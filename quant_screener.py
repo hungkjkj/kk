@@ -293,7 +293,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         cfo_quality = total_cfo_5y / total_ni_5y if total_ni_5y != 0 else 0
         
         ep_ratio = net_income_current / market_cap if market_cap > 0 else 0
-        value_ratio = ep_ratio * avg_roic_5y
+        value_ratio = (ep_ratio / avg_roic_5y) if avg_roic_5y != 0 else 0
         
         try:
             df_cf_q = f.cash_flow(period='quarter')
@@ -634,9 +634,12 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         
         net_income_current = history[-1]['ni'] if history else 0
         
+        ep_list = [h['ep'] for h in history if h['ep'] > 0]
+        avg_ep = np.mean(ep_list) if ep_list else 0
+        value_ratio = (avg_ep / avg_roic_5y) if avg_roic_5y != 0 else 0
+        
         bp_list = [h['bp'] for h in history if h['bp'] > 0]
         avg_bp = np.mean(bp_list) if bp_list else 0
-        value_ratio = avg_bp * avg_roic_5y
         
         ed_list = [1 / h['de'] if h['de'] > 0 else 1000 for h in history]
         avg_ed_5y = np.mean(ed_list) if ed_list else 0
