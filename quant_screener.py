@@ -5,6 +5,8 @@ import warnings
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
+import os
+os.environ["CODESPACE_NAME"] = "render_bypass" # Fix bug hosting_service của vnstock trên server Render
 from vnstock import Listing, Finance, Vnstock, Company
 
 def get_available_sectors():
