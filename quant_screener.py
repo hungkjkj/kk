@@ -299,8 +299,9 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             df_cf_q = f.cash_flow(period='quarter')
             df_is_q = f.income_statement(period='quarter')
             df_bs_q = f.balance_sheet(period='quarter')
+            df_ratio_q = f.ratio(period='quarter')
         except:
-            df_cf_q, df_is_q, df_bs_q = None, None, None
+            df_cf_q, df_is_q, df_bs_q, df_ratio_q = None, None, None, None
 
         roic_ttm = 0
         cfo_quality_ttm = 0
@@ -332,6 +333,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             if ni_ttm != 0:
                 cfo_quality_ttm = cfo_ttm / ni_ttm
 
+        pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"]) if df_ratio_q is not None else 0
+
         return {
             'Ticker': ticker,
             'ROIC_5Y': avg_roic_5y,
@@ -340,7 +343,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             'DE_5Y': avg_de_5y,
             'ROIC_TTM': roic_ttm,
             'CFO_Quality_TTM': cfo_quality_ttm,
-            'DE_Current': de_current
+            'DE_Current': de_current,
+            'PB_Current': float(pb_q) if pb_q else 0
         }
         
     except Exception:

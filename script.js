@@ -238,6 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3>ICR (Current)</h3>
                     <p>${formatNum(summary.ICR_Current)}</p>
                 </div>
+                <div class="card">
+                    <h3>P/B (Current)</h3>
+                    <p>${formatNum(summary.PB_Current)}</p>
+                </div>
             `;
         }
         
