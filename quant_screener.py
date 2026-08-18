@@ -371,6 +371,15 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             return None
 
         return {
+            'summary': {
+                'ROIC_5Y': avg_roic_5y,
+                'Value_Ratio': value_ratio,
+                'CFO_Quality_TTM': cfo_quality_ttm,
+                'DE_Current': de_current,
+                'ROIC_TTM': roic_ttm,
+                'PB_Current': float(pb_q),
+                'Current_Price': float(current_price)
+            },
             'Ticker': ticker,
             'ROIC_5Y': avg_roic_5y,
             'Value_Ratio': value_ratio,
@@ -458,14 +467,17 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 company_name = overview_df.iloc[0].get('organ_name', ticker)
                 sector = overview_df.iloc[0].get('sector', '')
                 market_cap_overview = overview_df.iloc[0].get('market_cap', 0)
+                current_price = overview_df.iloc[0].get('current_price', 0)
             else:
                 company_name = ticker
                 sector = ""
                 market_cap_overview = 0
+                current_price = 0
         except:
             company_name = ticker
             sector = ""
             market_cap_overview = 0
+            current_price = 0
             
         if sector.lower() in ['ngân hàng', 'banks']:
             f = Finance(symbol=ticker, source='KBS')
@@ -586,7 +598,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'NIM_Current': float(nim_q) if nim_q else 0,
                     'LLR_Current': float(llr_q) if llr_q else 0,
                     'NPL_Current': float(npl_q) if npl_q else 0,
-                    'PB_Current': float(pb_q) if pb_q else 0
+                    'PB_Current': float(pb_q) if pb_q else 0,
+                    'Current_Price': float(current_price) if current_price else 0
                 },
                 'history': history
             }
@@ -756,7 +769,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'ROIC_TTM': roic_ttm,
                 'CFO_Quality_TTM': cfo_quality_ttm,
                 'DE_Current': de_current,
-                'PB_Current': pb_current
+                'PB_Current': pb_current,
+                'Current_Price': float(current_price) if current_price else 0
             },
             'history': history
         }
