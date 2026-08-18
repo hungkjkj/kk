@@ -193,8 +193,10 @@ def calculate_engine_bank(ticker):
         try:
             overview_df = Company(symbol=ticker, source='VCI').overview()
             market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
+            current_price = overview_df.iloc[0].get('current_price', 0) if not overview_df.empty else 0
         except:
             market_cap_overview = 0
+            current_price = 0
             
         equity_q = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
         if equity_q == 0 and df_bs is not None:
@@ -221,7 +223,8 @@ def calculate_engine_bank(ticker):
             'NIM': float(nim),
             'LLR': float(llr),
             'NPL': float(npl),
-            'PB': float(pb)
+            'PB': float(pb),
+            'Current_Price': float(current_price)
         }
     except Exception as e:
         return None
@@ -265,8 +268,10 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         try:
             overview_df = Company(symbol=ticker, source='VCI').overview()
             market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
+            current_price = overview_df.iloc[0].get('current_price', 0) if not overview_df.empty else 0
         except:
             market_cap_overview = 0
+            current_price = 0
             
         market_cap = market_cap_overview * 1e9 if market_cap_overview > 0 and market_cap_overview < 1000000 else market_cap_overview
 
@@ -374,7 +379,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             'ROIC_TTM': roic_ttm,
             'CFO_Quality_TTM': cfo_quality_ttm,
             'DE_Current': de_current,
-            'PB_Current': float(pb_q)
+            'PB_Current': float(pb_q),
+            'Current_Price': float(current_price)
         }
         
     except Exception:

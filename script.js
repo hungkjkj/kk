@@ -143,6 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
+            const formatPBWithPrice = (pb, price) => {
+                if (pb === undefined || pb === null || isNaN(pb)) return '-';
+                let pbStr = pb.toFixed(2);
+                if (price && price > 0) {
+                    pbStr += ` <span style="font-size: 0.85em; color: #94a3b8;">(${price.toLocaleString('vi-VN')} vnd)</span>`;
+                }
+                return pbStr;
+            };
+
             let html = '';
             ranking.forEach((r, idx) => {
                 const isMain = r.ticker === main_ticker;
@@ -167,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${(r.NIM_Current * 100).toFixed(1)}%</td>
                             <td style="padding: 12px;">${(r.LLR_Current * 100).toFixed(1)}%</td>
                             <td style="padding: 12px;">${(r.NPL_Current * 100).toFixed(1)}%</td>
-                            <td style="padding: 12px; ${pbStyle}">${r.PB_Current.toFixed(2)}</td>
+                            <td style="padding: 12px; ${pbStyle}">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
                         </tr>
                     `;
                 } else {
@@ -181,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
                             <td style="padding: 12px;">${r.CFO_Quality_TTM.toFixed(2)}</td>
                             <td style="padding: 12px;">${r.DE_Current.toFixed(2)}</td>
-                            <td style="padding: 12px;">${(r.PB_Current !== undefined && r.PB_Current !== null) ? r.PB_Current.toFixed(2) : '-'}</td>
+                            <td style="padding: 12px;">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
                         </tr>
                     `;
                 }
@@ -194,6 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Summary (Always for main ticker)
         const formatPct = (val) => (val * 100).toFixed(2) + '%';
         const formatNum = (val) => val.toFixed(2);
+        const formatPBWithPriceSummary = (pb, price) => {
+            if (pb === undefined || pb === null || isNaN(pb)) return '-';
+            let pbStr = pb.toFixed(2);
+            if (price && price > 0) {
+                pbStr += ` <span style="font-size: 0.85em; color: #94a3b8;">(${price.toLocaleString('vi-VN')} vnd)</span>`;
+            }
+            return pbStr;
+        };
         
         if (isBank) {
             summaryCards.innerHTML = `
@@ -214,8 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${formatPct(summary.NPL_Current)}</p>
                 </div>
                 <div class="card">
-                    <h3>P/B</h3>
-                    <p>${formatNum(summary.PB_Current)}</p>
+                    <h3>P/B (Current)</h3>
+                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}</p>
                 </div>
             `;
         } else {
@@ -242,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card">
                     <h3>P/B (Current)</h3>
-                    <p>${formatNum(summary.PB_Current)}</p>
+                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}</p>
                 </div>
             `;
         }
