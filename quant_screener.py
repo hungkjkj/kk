@@ -150,7 +150,7 @@ def calculate_engine_bank(ticker):
         df_bs = f.balance_sheet(period='year')
         
         try:
-            df_ratio_q = Finance(symbol=ticker, source='VCI').ratio(period='quarter')
+            df_ratio_q = f.ratio(period='quarter')
             df_bs_q = f.balance_sheet(period='quarter')
         except:
             df_ratio_q, df_bs_q = None, None
@@ -212,13 +212,16 @@ def calculate_engine_bank(ticker):
         if casa == 0 and df_bs_q is not None: casa = get_latest_q_value(df_bs_q, ["CASA", "không kỳ hạn"])
         if casa == 0 and df_bs is not None: casa = get_row_value(df_bs, ["CASA", "không kỳ hạn"], latest_year_str)
             
+        if not casa or not nim or not llr or not npl or not pb:
+            return None
+
         return {
             'Ticker': ticker,
-            'CASA': float(casa) if casa else 0.0,
-            'NIM': float(nim) if nim else 0.0,
-            'LLR': float(llr) if llr else 0.0,
-            'NPL': float(npl) if npl else 0.0,
-            'PB': float(pb) if pb else 0.0
+            'CASA': float(casa),
+            'NIM': float(nim),
+            'LLR': float(llr),
+            'NPL': float(npl),
+            'PB': float(pb)
         }
     except Exception as e:
         return None
@@ -316,9 +319,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             df_cf_q = f.cash_flow(period='quarter')
             df_is_q = f.income_statement(period='quarter')
             df_bs_q = f.balance_sheet(period='quarter')
-            df_ratio_q = f.ratio(period='quarter')
         except:
-            df_cf_q, df_is_q, df_bs_q, df_ratio_q = None, None, None, None
+            df_cf_q, df_is_q, df_bs_q = None, None, None
 
         roic_ttm = 0
         cfo_quality_ttm = 0
@@ -358,7 +360,10 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
             pb_q = mc / equity_q_val
         else:
-            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"]) if df_ratio_q is not None else 0
+            return None
+
+        if not pb_q or not avg_roic_5y or not ep_ratio:
+            return None
 
         return {
             'Ticker': ticker,
@@ -369,7 +374,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             'ROIC_TTM': roic_ttm,
             'CFO_Quality_TTM': cfo_quality_ttm,
             'DE_Current': de_current,
-            'PB_Current': float(pb_q) if pb_q else 0
+            'PB_Current': float(pb_q)
         }
         
     except Exception:
