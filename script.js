@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">B/P (5Y)</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO/NI (TTM)</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">D/E (Cur)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B (Cur)</th>
                     </tr>
                 `;
             }
@@ -180,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
                             <td style="padding: 12px;">${r.CFO_Quality_TTM.toFixed(2)}</td>
                             <td style="padding: 12px;">${r.DE_Current.toFixed(2)}</td>
+                            <td style="padding: 12px;">${(r.PB_Current !== undefined && r.PB_Current !== null) ? r.PB_Current.toFixed(2) : '-'}</td>
                         </tr>
                     `;
                 }

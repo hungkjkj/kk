@@ -654,12 +654,23 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             df_cf_q = f.cash_flow(period='quarter')
             df_is_q = f.income_statement(period='quarter')
             df_bs_q = f.balance_sheet(period='quarter')
+            df_ratio_q = f.ratio(period='quarter')
         except:
-            df_cf_q, df_is_q, df_bs_q = None, None, None
+            df_cf_q, df_is_q, df_bs_q, df_ratio_q = None, None, None, None
 
         roic_ttm = 0
         cfo_quality_ttm = 0
         de_current = 0
+        pb_current = 0
+        
+        if df_ratio_q is not None and not df_ratio_q.empty:
+            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+            if pb_q:
+                pb_current = float(pb_q)
+                
+        if pb_current == 0 and history:
+            pb_current = 1 / history[-1]['bp'] if history[-1]['bp'] > 0 else 0
+
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
             ebt_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
             tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
@@ -691,7 +702,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'ICR_Current': current_icr,
                 'ROIC_TTM': roic_ttm,
                 'CFO_Quality_TTM': cfo_quality_ttm,
-                'DE_Current': de_current
+                'DE_Current': de_current,
+                'PB_Current': pb_current
             },
             'history': history
         }
@@ -751,7 +763,8 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
                 'CFO_Quality_TTM': summary.get('CFO_Quality_TTM', 0),
                 'ED_5Y': summary.get('ED_5Y', 0),
                 'DE_Current': summary.get('DE_Current', 0),
-                'ICR_Current': summary.get('ICR_Current', 0)
+                'ICR_Current': summary.get('ICR_Current', 0),
+                'PB_Current': summary.get('PB_Current', 0)
             })
     
     df_rank = pd.DataFrame(rank_data)
