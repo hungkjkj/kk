@@ -184,8 +184,22 @@ def calculate_engine_bank(ticker):
         if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], latest_year_str)
         if llr: llr = abs(llr)
             
-        pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-        if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
+        try:
+            overview_df = Company(symbol=ticker, source='VCI').overview()
+            market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
+        except:
+            market_cap_overview = 0
+            
+        equity_q = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
+        if equity_q == 0 and df_bs is not None:
+            equity_q = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str)
+            
+        if market_cap_overview > 0 and equity_q > 0:
+            mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
+            pb = mc / equity_q
+        else:
+            pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+            if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
         
         casa = get_latest_q_value(df_ratio_q, ["CASA", "không kỳ hạn"])
         if casa == 0: casa = get_row_value(df_ratio, ["CASA", "không kỳ hạn"], latest_year_str)
@@ -333,7 +347,21 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             if ni_ttm != 0:
                 cfo_quality_ttm = cfo_ttm / ni_ttm
 
-        pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"]) if df_ratio_q is not None else 0
+        equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
+        if equity_q_val == 0 and df_bs is not None:
+            equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], str(latest_year))
+
+        try:
+            overview_df = Company(symbol=ticker, source='VCI').overview()
+            market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
+        except:
+            market_cap_overview = 0
+
+        if market_cap_overview > 0 and equity_q_val > 0:
+            mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
+            pb_q = mc / equity_q_val
+        else:
+            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"]) if df_ratio_q is not None else 0
 
         return {
             'Ticker': ticker,
@@ -421,12 +449,15 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             if not overview_df.empty:
                 company_name = overview_df.iloc[0].get('organ_name', ticker)
                 sector = overview_df.iloc[0].get('sector', '')
+                market_cap_overview = overview_df.iloc[0].get('market_cap', 0)
             else:
                 company_name = ticker
                 sector = ""
+                market_cap_overview = 0
         except:
             company_name = ticker
             sector = ""
+            market_cap_overview = 0
             
         if sector.lower() in ['ngân hàng', 'banks']:
             f = Finance(symbol=ticker, source='KBS')
@@ -524,8 +555,15 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             else:
                 llr_q = abs(llr_q)
                 
-            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-            if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
+            equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
+            if equity_q_val == 0: equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str) if df_bs is not None else 0
+            
+            if market_cap_overview > 0 and equity_q_val > 0:
+                mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
+                pb_q = mc / equity_q_val
+            else:
+                pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+                if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
             
             casa_q = get_latest_q_value(df_ratio_q, ["CASA", "không kỳ hạn"])
             if casa_q == 0 and df_bs_q is not None: casa_q = get_latest_q_value(df_bs_q, ["CASA", "không kỳ hạn"])
@@ -663,13 +701,20 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         de_current = 0
         pb_current = 0
         
-        if df_ratio_q is not None and not df_ratio_q.empty:
-            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-            if pb_q:
-                pb_current = float(pb_q)
-                
-        if pb_current == 0 and history:
-            pb_current = 1 / history[-1]['bp'] if history[-1]['bp'] > 0 else 0
+        equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
+        if equity_q_val == 0 and df_bs is not None:
+            equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], str(latest_year))
+
+        if market_cap_overview > 0 and equity_q_val > 0:
+            mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
+            pb_current = mc / equity_q_val
+        else:
+            if df_ratio_q is not None and not df_ratio_q.empty:
+                pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+                if pb_q:
+                    pb_current = float(pb_q)
+            if pb_current == 0 and history:
+                pb_current = 1 / history[-1]['bp'] if history[-1]['bp'] > 0 else 0
 
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
             ebt_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
