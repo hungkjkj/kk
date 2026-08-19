@@ -131,6 +131,30 @@ def get_latest_q_value(df, keywords, default=0):
     except: pass
     return default
 
+def get_latest_quarter_str(df, keywords):
+    if df is None or df.empty: return ""
+    if isinstance(keywords, str): keywords = [keywords]
+    import pandas as pd
+    try:
+        matches = pd.DataFrame()
+        item_col = df.columns[0]
+        for kw in keywords:
+            m = df[df[item_col].astype(str).str.contains(kw, case=False, na=False, regex=False)]
+            if not m.empty:
+                matches = m
+                break
+        if not matches.empty:
+            q_cols = [c for c in df.columns if '-Q' in str(c) and len(str(c)) == 7]
+            q_cols.sort(reverse=True)
+            if not q_cols: return ""
+            for i in range(len(matches)):
+                for q in q_cols:
+                    val = matches.iloc[i][q]
+                    if pd.notna(val) and str(val).strip() != '':
+                        return q
+    except: pass
+    return ""
+
 def get_top_market_cap(tickers, limit=10):
     """ Lấy danh sách Top 10 mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
     try:
@@ -747,7 +771,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             if pb_current == 0 and history:
                 pb_current = 1 / history[-1]['bp'] if history[-1]['bp'] > 0 else 0
 
+        latest_q_str = ""
         if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
+            latest_q_str = get_latest_quarter_str(df_is_q, ["Lãi/(lỗ) từ hoạt động kinh doanh", "Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
             ebt_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) trước thuế", "Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
             tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
             ni_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) thuần sau thuế", "Lợi nhuận của Cổ đông của Công ty mẹ", "Lợi nhuận sau thuế", "Net income"])
@@ -788,7 +814,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'CFO_Quality_TTM': cfo_quality_ttm,
                 'DE_Current': de_current,
                 'PB_Current': pb_current,
-                'Current_Price': float(current_price) if current_price else 0
+                'Current_Price': float(current_price) if current_price else 0,
+                'Latest_Quarter': latest_q_str
             },
             'history': history
         }

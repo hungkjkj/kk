@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryCards.innerHTML = `
                 <div class="card">
                     <h3>ROIC (TTM / 5Y)</h3>
-                    <p>${formatPct(summary.ROIC_TTM)} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}</span></p>
+                    <p>${formatPct(summary.ROIC_TTM)}${summary.Latest_Quarter ? ` <span style="font-size:0.85rem; color:#94a3b8">(${summary.Latest_Quarter})</span>` : ''} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}</span></p>
                 </div>
                 <div class="card">
                     <h3>Value Ratio</h3>
