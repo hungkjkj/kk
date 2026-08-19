@@ -56,9 +56,9 @@ def get_row_value(df, keywords, year_str, default=0):
                 break
                 
         if not matches.empty:
-            if col_name in matches.columns:
+            if year_str in matches.columns:
                 for i in range(len(matches)):
-                    val = matches.iloc[i][col_name]
+                    val = matches.iloc[i][year_str]
                     if pd.notna(val) and str(val).strip() != '':
                         try:
                             return float(val)
