@@ -753,6 +753,14 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             ni_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) thuần sau thuế", "Lợi nhuận của Cổ đông của Công ty mẹ", "Lợi nhuận sau thuế", "Net income"])
             ebit_ttm = get_ttm_value(df_is_q, ["Lãi/(lỗ) từ hoạt động kinh doanh", "Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
             if ebit_ttm == 0: ebit_ttm = ebt_ttm
+            
+            interest_ttm = get_ttm_value(df_is_q, ["Chi phí lãi vay", "Interest expense"])
+            if interest_ttm != 0:
+                current_icr = ebit_ttm / abs(interest_ttm)
+            elif df_ratio_q is not None and not df_ratio_q.empty:
+                icr_q = get_latest_q_value(df_ratio_q, ["Khả năng thanh toán lãi vay", "ICR"])
+                if icr_q: current_icr = float(icr_q)
+                
             cfo_ttm = get_ttm_value(df_cf_q, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"]) if df_cf_q is not None else 0
             tax_rate_ttm = tax_ttm / ebt_ttm if ebt_ttm > 0 else tax_rate_fallback
             tax_rate_ttm = max(0.0, min(0.22, tax_rate_ttm))
