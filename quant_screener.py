@@ -56,13 +56,14 @@ def get_row_value(df, keywords, year_str, default=0):
                 break
                 
         if not matches.empty:
-            if year_str in matches.columns:
-                val = matches.iloc[0][year_str]
-                if pd.notna(val):
-                    try:
-                        return float(val)
-                    except:
-                        pass
+            if col_name in matches.columns:
+                for i in range(len(matches)):
+                    val = matches.iloc[i][col_name]
+                    if pd.notna(val) and str(val).strip() != '':
+                        try:
+                            return float(val)
+                        except:
+                            pass
     except Exception as e:
         pass
     return default
@@ -82,19 +83,27 @@ def get_ttm_value(df, keywords, default=0):
             q_cols = [c for c in df.columns if '-Q' in str(c) and len(str(c)) == 7]
             q_cols.sort(reverse=True)
             if not q_cols: return default
-            q_cols = q_cols[:4]
+            
             for i in range(len(matches)):
-                total = 0
-                valid_count = 0
-                for q in q_cols:
+                valid_start_idx = -1
+                for idx, q in enumerate(q_cols):
                     val = matches.iloc[i][q]
-                    if pd.notna(val):
-                        try:
-                            total += float(val)
-                            valid_count += 1
-                        except: pass
-                if valid_count > 0:
-                    return total
+                    if pd.notna(val) and str(val).strip() != '':
+                        valid_start_idx = idx
+                        break
+                
+                if valid_start_idx != -1:
+                    total = 0
+                    valid_count = 0
+                    for q in q_cols[valid_start_idx : valid_start_idx + 4]:
+                        val = matches.iloc[i][q]
+                        if pd.notna(val) and str(val).strip() != '':
+                            try:
+                                total += float(val)
+                                valid_count += 1
+                            except: pass
+                    if valid_count > 0:
+                        return total
     except: pass
     return default
 
@@ -114,10 +123,11 @@ def get_latest_q_value(df, keywords, default=0):
             q_cols.sort(reverse=True)
             if not q_cols: return default
             for i in range(len(matches)):
-                val = matches.iloc[i][q_cols[0]]
-                if pd.notna(val):
-                    try: return float(val)
-                    except: pass
+                for q in q_cols:
+                    val = matches.iloc[i][q]
+                    if pd.notna(val) and str(val).strip() != '':
+                        try: return float(val)
+                        except: pass
     except: pass
     return default
 
@@ -198,9 +208,9 @@ def calculate_engine_bank(ticker):
             market_cap_overview = 0
             current_price = 0
             
-        equity_q = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
+        equity_q = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
         if equity_q == 0 and df_bs is not None:
-            equity_q = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str)
+            equity_q = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str)
             
         if market_cap_overview > 0 and equity_q > 0:
             mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
@@ -357,9 +367,9 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             if ni_ttm != 0:
                 cfo_quality_ttm = cfo_ttm / ni_ttm
 
-        equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
+        equity_q_val = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
         if equity_q_val == 0 and df_bs is not None:
-            equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], str(latest_year))
+            equity_q_val = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"], str(latest_year))
 
         if market_cap_overview > 0 and equity_q_val > 0:
             mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
@@ -575,8 +585,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             else:
                 llr_q = abs(llr_q)
                 
-            equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
-            if equity_q_val == 0: equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str) if df_bs is not None else 0
+            equity_q_val = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
+            if equity_q_val == 0: equity_q_val = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str) if df_bs is not None else 0
             
             if market_cap_overview > 0 and equity_q_val > 0:
                 mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
@@ -722,9 +732,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
         de_current = 0
         pb_current = 0
         
-        equity_q_val = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
+        equity_q_val = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
         if equity_q_val == 0 and df_bs is not None:
-            equity_q_val = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], str(latest_year))
+            equity_q_val = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"], str(latest_year))
 
         if market_cap_overview > 0 and equity_q_val > 0:
             mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview

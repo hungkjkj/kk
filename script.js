@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rankingBody = document.getElementById('ranking-body');
     const rankingHeader = document.getElementById('ranking-header');
 
+    let currentReportData = null; // Store data for JSON export
     let charts = {}; // Store chart instances to destroy them later
 
     // Color palette for different companies
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     showStatus('Đã phân tích xong dữ liệu!', false);
                 }
+                currentReportData = data.data;
                 renderReport(data.data);
                 reportContainer.style.display = 'block';
             } else {
@@ -471,28 +473,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyReportBtn = document.getElementById('copy-report-btn');
     if (copyReportBtn) {
         copyReportBtn.addEventListener('click', () => {
-            const ticker = document.getElementById('company-info')?.querySelector('h2')?.innerText || 'Cổ phiếu';
-            const cards = document.querySelectorAll('#summary-cards .card');
-            if (cards.length === 0) return;
+            if (!currentReportData) return;
+            
+            const mainTicker = currentReportData.main_ticker;
+            const mainReport = currentReportData.reports[mainTicker];
+            
+            const aiData = {
+                ticker: mainTicker,
+                company_name: mainReport.company_name,
+                sector: mainReport.sector,
+                summary_indicators: mainReport.summary,
+                historical_data: mainReport.history,
+            };
+            
+            const peers = Object.keys(currentReportData.reports).filter(t => t !== mainTicker);
+            if (peers.length > 0) {
+                aiData.peers = peers.map(p => ({
+                    ticker: p,
+                    company_name: currentReportData.reports[p].company_name,
+                    summary_indicators: currentReportData.reports[p].summary,
+                    historical_data: currentReportData.reports[p].history
+                }));
+            }
+            
+            if (currentReportData.ranking && currentReportData.ranking.length > 0) {
+                aiData.ranking = currentReportData.ranking;
+            }
 
-            let textToCopy = `Báo cáo chỉ số: ${ticker}\n`;
-            textToCopy += '----------------------\n';
-            cards.forEach(card => {
-                const title = card.querySelector('h3').innerText;
-                const value = card.querySelector('p').innerText.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-                textToCopy += `${title}: ${value}\n`;
-            });
+            const jsonString = JSON.stringify(aiData, null, 2);
 
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalText = copyReportBtn.innerHTML;
-                copyReportBtn.innerHTML = '<i class="fas fa-check"></i> Đã sao chép';
-                setTimeout(() => {
-                    copyReportBtn.innerHTML = originalText;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                alert('Lỗi sao chép, vui lòng thử lại.');
-            });
+            // Sao chép vào clipboard để người dùng dễ dán
+            navigator.clipboard.writeText(jsonString).catch(err => console.error("Clipboard error:", err));
+
+            // Tải file JSON xuống
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${mainTicker}_AI_Analysis_Data.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            const originalText = copyReportBtn.innerHTML;
+            copyReportBtn.innerHTML = '<i class="fas fa-check"></i> Đã xuất file JSON';
+            setTimeout(() => {
+                copyReportBtn.innerHTML = originalText;
+            }, 2000);
         });
     }
 });
