@@ -243,9 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3>ROIC (TTM / 5Y)</h3>
                     <p>${formatPct(summary.ROIC_TTM)}${summary.Latest_Quarter ? ` <span style="font-size:0.85rem; color:#94a3b8">(${summary.Latest_Quarter})</span>` : ''} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}</span></p>
                 </div>
-                <div class="card">
-                    <h3>Value Ratio</h3>
+                <div class="card" title="Công thức: Lợi suất E/P (5 năm) / ROIC (5 năm). Đo lường mức định giá rẻ (E/P) trên mỗi đơn vị hiệu quả sinh lời (ROIC).">
+                    <h3>Value Ratio ⓘ</h3>
                     <p>${formatNum(summary.Value_Ratio)}</p>
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Avg E/P ÷ Avg ROIC (5Y)</div>
                 </div>
                 <div class="card">
                     <h3>CFO Quality (TTM)</h3>
