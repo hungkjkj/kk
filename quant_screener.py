@@ -597,6 +597,11 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             except:
                 df_ratio_q, df_bs_q = None, None
                 
+            latest_q_str = ""
+            if df_ratio_q is not None and not df_ratio_q.empty:
+                latest_q_str = get_latest_quarter_str(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
+            latest_y_str = str(history[-1]['year']) if history else ""
+                
             npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
             if npl_q == 0: npl_q = history[-1]['npl'] if history else 0
             
@@ -633,7 +638,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'LLR_Current': float(llr_q) if llr_q else 0,
                     'NPL_Current': float(npl_q) if npl_q else 0,
                     'PB_Current': float(pb_q) if pb_q else 0,
-                    'Current_Price': float(current_price) if current_price else 0
+                    'Current_Price': float(current_price) if current_price else 0,
+                    'Latest_Quarter': latest_q_str,
+                    'Latest_Year': latest_y_str
                 },
                 'history': history
             }
@@ -815,7 +822,8 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'DE_Current': de_current,
                 'PB_Current': pb_current,
                 'Current_Price': float(current_price) if current_price else 0,
-                'Latest_Quarter': latest_q_str
+                'Latest_Quarter': latest_q_str,
+                'Latest_Year': str(history[-1]['year']) if history else ""
             },
             'history': history
         }

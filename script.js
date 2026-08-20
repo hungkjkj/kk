@@ -214,55 +214,58 @@ document.addEventListener('DOMContentLoaded', () => {
             return pbStr;
         };
         
+        const tQ = summary.Latest_Quarter ? ` <span style="font-size:0.85rem; color:#94a3b8">(${summary.Latest_Quarter})</span>` : '';
+        const tY = summary.Latest_Year ? ` <span style="font-size:0.85rem; color:#94a3b8">(${summary.Latest_Year})</span>` : '';
+
         if (isBank) {
             summaryCards.innerHTML = `
-                <div class="card">
-                    <h3>CASA</h3>
-                    <p>${formatPct(summary.CASA_Current)}</p>
+                <div class="card" title="Tỷ lệ Tiền gửi không kỳ hạn / Tổng tiền gửi khách hàng.">
+                    <h3>CASA ⓘ</h3>
+                    <p>${formatPct(summary.CASA_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>NIM</h3>
-                    <p>${formatPct(summary.NIM_Current)}</p>
+                <div class="card" title="Biên lãi thuần (Net Interest Margin): Thu nhập lãi thuần / Tài sản sinh lãi bình quân.">
+                    <h3>NIM ⓘ</h3>
+                    <p>${formatPct(summary.NIM_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>LLR</h3>
-                    <p>${formatPct(summary.LLR_Current)}</p>
+                <div class="card" title="Tỷ lệ bao phủ nợ xấu (Loan Loss Reserve): Dự phòng rủi ro tín dụng / Tổng nợ xấu.">
+                    <h3>LLR ⓘ</h3>
+                    <p>${formatPct(summary.LLR_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>NPL</h3>
-                    <p>${formatPct(summary.NPL_Current)}</p>
+                <div class="card" title="Tỷ lệ nợ xấu (Non-Performing Loan): Nợ nhóm 3,4,5 / Tổng dư nợ.">
+                    <h3>NPL ⓘ</h3>
+                    <p>${formatPct(summary.NPL_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>P/B (Current)</h3>
-                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}</p>
+                <div class="card" title="Chỉ số Giá trên Sổ sách (Price to Book).">
+                    <h3>P/B (Current) ⓘ</h3>
+                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}${tQ}</p>
                 </div>
             `;
         } else {
             summaryCards.innerHTML = `
-                <div class="card">
-                    <h3>ROIC (TTM / 5Y)</h3>
-                    <p>${formatPct(summary.ROIC_TTM)}${summary.Latest_Quarter ? ` <span style="font-size:0.85rem; color:#94a3b8">(${summary.Latest_Quarter})</span>` : ''} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}</span></p>
+                <div class="card" title="Tỷ suất sinh lời trên vốn đầu tư (Return on Invested Capital). Công thức: EBIT * (1 - Thuế) / (Vốn chủ sở hữu + Nợ vay - Tiền mặt).">
+                    <h3>ROIC (TTM / 5Y) ⓘ</h3>
+                    <p>${formatPct(summary.ROIC_TTM)}${tQ} / <span style="font-size:0.9rem; color:#94a3b8">${formatPct(summary.ROIC_5Y)}${tY}</span></p>
                 </div>
-                <div class="card" title="Công thức: Lợi suất E/P (5 năm) / ROIC (5 năm). Đo lường mức định giá rẻ (E/P) trên mỗi đơn vị hiệu quả sinh lời (ROIC).">
+                <div class="card" title="Công thức: Lợi suất E/P (Trung bình 5 năm) / ROIC (Trung bình 5 năm). Đo lường mức định giá rẻ (E/P) trên mỗi đơn vị hiệu quả sinh lời (ROIC).">
                     <h3>Value Ratio ⓘ</h3>
-                    <p>${formatNum(summary.Value_Ratio)}</p>
+                    <p>${formatNum(summary.Value_Ratio)}${tY}</p>
                     <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Avg E/P ÷ Avg ROIC (5Y)</div>
                 </div>
-                <div class="card">
-                    <h3>CFO Quality (TTM)</h3>
-                    <p>${formatNum(summary.CFO_Quality_TTM)}</p>
+                <div class="card" title="Chất lượng dòng tiền (CFO Quality). Công thức: Dòng tiền hoạt động kinh doanh (CFO) / Lợi nhuận sau thuế (Net Income). Đo lường mức độ lợi nhuận được hậu thuẫn bởi tiền mặt thực tế.">
+                    <h3>CFO Quality (TTM) ⓘ</h3>
+                    <p>${formatNum(summary.CFO_Quality_TTM)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>D/E (Current)</h3>
-                    <p>${formatNum(summary.DE_Current)}</p>
+                <div class="card" title="Tỷ lệ Nợ vay trên Vốn chủ sở hữu (Debt to Equity). Công thức: Tổng nợ vay / Vốn chủ sở hữu. Đo lường đòn bẩy tài chính.">
+                    <h3>D/E (Current) ⓘ</h3>
+                    <p>${formatNum(summary.DE_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>ICR (Current)</h3>
-                    <p>${formatNum(summary.ICR_Current)}</p>
+                <div class="card" title="Hệ số thanh toán lãi vay (Interest Coverage Ratio). Công thức: Lợi nhuận trước lãi vay và thuế (EBIT) / Chi phí lãi vay. Đo lường khả năng trả lãi của doanh nghiệp.">
+                    <h3>ICR (Current) ⓘ</h3>
+                    <p>${formatNum(summary.ICR_Current)}${tQ}</p>
                 </div>
-                <div class="card">
-                    <h3>P/B (Current)</h3>
-                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}</p>
+                <div class="card" title="Chỉ số Giá trên Sổ sách (Price to Book).">
+                    <h3>P/B (Current) ⓘ</h3>
+                    <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}${tQ}</p>
                 </div>
             `;
         }
