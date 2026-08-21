@@ -219,6 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isBank) {
             summaryCards.innerHTML = `
+                <div class="card" title="Tỷ suất lợi nhuận ròng trên vốn chủ sở hữu (TTM): Lợi nhuận sau thuế 4 quý gần nhất / Vốn chủ sở hữu.">
+                    <h3>ROE (TTM) ⓘ</h3>
+                    <p>${formatPct(summary.ROE_TTM)}${tQ}</p>
+                </div>
                 <div class="card" title="Tỷ lệ Tiền gửi không kỳ hạn / Tổng tiền gửi khách hàng.">
                     <h3>CASA ⓘ</h3>
                     <p>${formatPct(summary.CASA_Current)}${tQ}</p>

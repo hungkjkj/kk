@@ -608,6 +608,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
             if npl_q == 0: npl_q = history[-1]['npl'] if history else 0
             
+            roe_ttm_q = get_latest_q_value(df_ratio_q, ["ROE", "lợi nhuận trên vốn", "Lợi nhuận ròng trên vốn chủ sở hữu", "Lợi nhuận sau thuế/Vốn chủ sở hữu"])
+            if roe_ttm_q and abs(roe_ttm_q) > 1: roe_ttm_q = roe_ttm_q / 100
+            
             nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
             if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
             if nim_q and abs(nim_q) > 0.5: nim_q = nim_q / 100
@@ -641,6 +644,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'LLR_Current': float(llr_q) if llr_q else 0,
                     'NPL_Current': float(npl_q) if npl_q else 0,
                     'PB_Current': float(pb_q) if pb_q else 0,
+                    'ROE_TTM': float(roe_ttm_q) if roe_ttm_q else 0,
                     'Current_Price': float(current_price) if current_price else 0,
                     'Latest_Quarter': latest_q_str,
                     'Latest_Year': latest_y_str
