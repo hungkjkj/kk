@@ -59,8 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.style.color = '#38bdf8';
 
         try {
-            const queryParams = new URLSearchParams({ ticker: ticker, peers: peers, taxRate: taxRate });
+            const queryParams = new URLSearchParams({ ticker: ticker, peers: peers });
+            queryParams.append('taxRate', taxRate);
+            
+            // Thêm cache-buster để tránh Cloudflare hoặc trình duyệt cache lại kết quả cũ
+            queryParams.append('t', Date.now());
+
             const response = await fetch(`/api/report?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('API server error');
             const data = await response.json();
 
             if (data.status === 'success' && data.data) {
@@ -225,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card" title="Tỷ lệ Tiền gửi không kỳ hạn / Tổng tiền gửi khách hàng.">
                     <h3>CASA ⓘ</h3>
-                    <p>${formatPct(summary.CASA_Current)}${tQ}</p>
+                    <p>${formatPct(summary.CASA_Current)}${tY}</p>
                 </div>
                 <div class="card" title="Biên lãi thuần (Net Interest Margin): Thu nhập lãi thuần / Tài sản sinh lãi bình quân.">
                     <h3>NIM ⓘ</h3>
@@ -233,11 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card" title="Tỷ lệ bao phủ nợ xấu (Loan Loss Reserve): Dự phòng rủi ro tín dụng / Tổng nợ xấu.">
                     <h3>LLR ⓘ</h3>
-                    <p>${formatPct(summary.LLR_Current)}${tQ}</p>
+                    <p>${formatPct(summary.LLR_Current)}${tY}</p>
                 </div>
                 <div class="card" title="Tỷ lệ nợ xấu (Non-Performing Loan): Nợ nhóm 3,4,5 / Tổng dư nợ.">
                     <h3>NPL ⓘ</h3>
-                    <p>${formatPct(summary.NPL_Current)}${tQ}</p>
+                    <p>${formatPct(summary.NPL_Current)}${tY}</p>
                 </div>
                 <div class="card" title="Chỉ số Giá trên Sổ sách (Price to Book).">
                     <h3>P/B (Current) ⓘ</h3>

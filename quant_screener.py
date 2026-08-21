@@ -595,46 +595,30 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             history.reverse()
             
             try:
-                df_ratio_q = Finance(symbol=ticker, source='VCI').ratio(period='quarter')
-                df_bs_q = f.balance_sheet(period='quarter')
+                df_ratio_q = Finance(symbol=ticker, source='KBS').ratio(period='quarter')
             except:
-                df_ratio_q, df_bs_q = None, None
+                df_ratio_q = None
                 
             latest_q_str = ""
-            if df_bs_q is not None and not df_bs_q.empty:
-                latest_q_str = get_latest_quarter_str(df_bs_q, ["Tài sản", "TỔNG CỘNG TÀI SẢN"])
-            if not latest_q_str and df_ratio_q is not None and not df_ratio_q.empty:
-                latest_q_str = get_latest_quarter_str(df_ratio_q, ["ROE", "lợi nhuận trên vốn", "NIM", "CASA"])
+            if df_ratio_q is not None and not df_ratio_q.empty:
+                latest_q_str = get_latest_quarter_str(df_ratio_q, ["ROE", "P/B"])
             latest_y_str = str(history[-1]['year']) if history else ""
                 
-            npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
-            if npl_q == 0: npl_q = history[-1]['npl'] if history else 0
+            npl_q = history[-1]['npl'] if history else 0
             
-            roe_ttm_q = get_latest_q_value(df_ratio_q, ["ROE", "lợi nhuận trên vốn", "Lợi nhuận ròng trên vốn chủ sở hữu", "Lợi nhuận sau thuế/Vốn chủ sở hữu"])
+            roe_ttm_q = get_latest_q_value(df_ratio_q, ["ROE bình quân"])
             if roe_ttm_q and abs(roe_ttm_q) > 1: roe_ttm_q = roe_ttm_q / 100
             
-            nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
+            nim_q = get_latest_q_value(df_ratio_q, ["NIM"])
             if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
             if nim_q and abs(nim_q) > 0.5: nim_q = nim_q / 100
                 
-            llr_q = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"]) # removed "Dự phòng rủi ro tín dụng/Tổng dư nợ" because it fetches provision expense, not NPL coverage
-            if llr_q == 0: llr_q = history[-1]['llr'] if history else 0
-            else:
-                llr_q = abs(llr_q)
+            llr_q = history[-1]['llr'] if history else 0
                 
-            equity_q_val = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
-            if equity_q_val == 0: equity_q_val = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str) if df_bs is not None else 0
+            pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+            if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
             
-            if market_cap_overview > 0 and equity_q_val > 0:
-                mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
-                pb_q = mc / equity_q_val
-            else:
-                pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-                if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
-            
-            casa_q = get_latest_q_value(df_ratio_q, ["CASA", "không kỳ hạn"])
-            if casa_q == 0 and df_bs_q is not None: casa_q = get_latest_q_value(df_bs_q, ["CASA", "không kỳ hạn"])
-            if casa_q == 0: casa_q = history[-1]['casa'] if history else 0
+            casa_q = history[-1]['casa'] if history else 0
 
             return {
                 'ticker': ticker,

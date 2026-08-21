@@ -1,0 +1,86 @@
+Tiền mặt, vàng bạc, đá quý
+Tài sản cố định
+Tài sản cố định hữu hình
+Nguyên giá TSCĐ hữu hình
+Hao mòn TSCĐ hữu hình
+Tài sản cố định thuê tài chính
+Nguyên giá TSCĐ thuê tài chính
+Hao mòn TSCĐ thuê tài chính
+Tài sản cố định vô hình
+Nguyên giá TSCĐ vô hình
+Hao mòn TSCĐ vô hình
+Bất động sản đầu tư
+Nguyên giá bất động sản đầu tư
+Hao mòn bất động sản đầu tư
+Góp vốn, đầu tư dài hạn
+Đầu tư vào công ty con
+Đầu tư vào công ty liên doanh
+Đầu tư dài hạn khác
+Dự phòng giảm giá đầu tư dài hạn
+TỔNG TÀI SẢN
+TỔNG NỢ PHẢI TRẢ
+VỐN CHỦ SỞ HỮU
+Vốn điều lệ
+Thặng dư vốn cổ phần
+Vốn khác
+Cổ phiếu Quỹ
+Chênh lệch đánh giá lại tài sản
+Chênh lệch tỷ giá hối đoái
+Lợi nhuận chưa phân phối
+Lợi ích của cổ đông thiểu số (trước 2015)
+NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU
+Tiền gửi tại Ngân hàng nhà nước Việt Nam
+Tiền gửi tại các TCTD khác và cho vay các TCTD khác
+Chứng khoán kinh doanh
+Chứng khoán kinh doanh
+Dự phòng giảm giá chứng khoán kinh doanh
+Các công cụ tài chính phái sinh và các tài sản tài chính khác
+Cho vay khách hàng
+Cho vay khách hàng
+Dự phòng rủi ro cho vay khách hàng
+Chứng khoán đầu tư
+Chứng khoán đầu tư sẵn sàng để bán
+Chứng khoán đầu tư giữ đến ngày đáo hạn
+Dự phòng giảm giá chứng khoán đầu tư
+Tài sản Có khác
+Các khoản nợ chính phủ và NHNN Việt Nam
+Tiền gửi và vay các Tổ chức tín dụng khác
+Tiền gửi của khách hàng
+Các công cụ tài chính phái sinh và các khoản nợ tài chính khác
+Vốn tài trợ, uỷ thác đầu tư của Chính phủ và các tổ chức tín dụng khác
+Phát hành giấy tờ có giá
+Các khoản nợ khác
+Vốn của tổ chức tín dụng
+Vốn đầu tư XDCB
+Cổ phiếu ưu đãi
+Quỹ của tổ chức tín dụng
+Bảo lãnh khác
+Cam kết giao dịch hối đoái
+Cam kết mua ngoại tệ
+Cam kết bán ngoại tệ
+Cam kết giao dịch hoán đổi
+Cam kết giao dịch tương lai
+Cam kết cho vay không hủy ngang
+Cam kết trong nghiệp vụ L/C
+Cam kết khác
+Lợi ích của cổ đông thiểu số
+Tiền gửi tại các TCTD khác
+Cho vay các TCTD khác
+Dự phòng rủi ro
+Hoạt động mua nợ
+Mua nợ
+Dự phòng rủi ro hoạt động mua nợ
+Các khoản phải thu
+Các khoản lãi và phí phải thu
+Tài sản thuế TNDN hoãn lại
+Tài sản Có khác
+Trong đó: Lợi thế thương mại
+Các khoản dự phòng rủi ro cho các tài sản Có nội bảng khác
+Tiền gửi của các tổ chức tín dụng khác
+Vay các tổ chức tín dụng khác
+Các khoản lãi, phí phải trả
+Thuế TNDN hoãn lại phải trả
+Các khoản phải trả và công nợ khác
+Dự phòng rủi ro khác
+Vốn Góp liên doanh
+Đầu tư vào công ty liên kết
