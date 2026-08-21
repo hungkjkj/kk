@@ -340,8 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     tension: 0.4
                 });
                 datasetsEp.push({
-                    label: `${t} E/P (%)`,
-                    data: hist.map(h => (h.ep * 100).toFixed(2)),
+                    label: `${t} ROE (%)`,
+                    data: hist.map(h => (h.roe * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
