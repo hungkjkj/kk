@@ -147,8 +147,8 @@ def get_latest_quarter_str(df, keywords):
             q_cols = [c for c in df.columns if '-Q' in str(c) and len(str(c)) == 7]
             q_cols.sort(reverse=True)
             if not q_cols: return ""
-            for i in range(len(matches)):
-                for q in q_cols:
+            for q in q_cols:
+                for i in range(len(matches)):
                     val = matches.iloc[i][q]
                     if pd.notna(val) and str(val).strip() != '':
                         return q
