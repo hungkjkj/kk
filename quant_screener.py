@@ -602,7 +602,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 
             latest_q_str = ""
             if df_ratio_q is not None and not df_ratio_q.empty:
-                latest_q_str = get_latest_quarter_str(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
+                latest_q_str = get_latest_quarter_str(df_ratio_q, ["ROE", "lợi nhuận trên vốn", "NIM", "CASA"])
             latest_y_str = str(history[-1]['year']) if history else ""
                 
             npl_q = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
