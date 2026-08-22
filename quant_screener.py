@@ -536,21 +536,21 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 pe = get_row_value(df_ratio, ["P/E", "Chỉ số giá thị trường trên thu nhập (P/E)"], ratio_year_str)
                 ep = 1 / pe if pe and pe != 0 else 0
                 roe = get_row_value(df_ratio, ["ROE", "lợi nhuận trên vốn chủ sở hữu"], ratio_year_str)
-                if roe and abs(roe) > 1: roe = roe / 100
+                if roe and abs(roe) < 100: roe = roe / 100
                 
-                casa = 0.0
-                npl = 0.0
+                roa = get_row_value(df_ratio, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"], ratio_year_str)
+                if roa and abs(roa) < 100: roa = roa / 100
                 
+                value_ratio = (roe / pb) if pb and pb > 0 and roe else 0.0
 
                 history.append({
                     'year': target_year_str,
-                    'casa': casa,
+                    'roa': float(roa) if roa else 0.0,
                     'nim': float(nim) if nim else 0.0,
-                    'llr': float(llr) if llr else 0.0,
-                    'npl': npl,
                     'pb': float(pb) if pb else 0.0,
                     'ep': float(ep) if ep else 0.0,
-                    'roe': float(roe) if roe else 0.0
+                    'roe': float(roe) if roe else 0.0,
+                    'value_ratio': float(value_ratio)
                 })
             
             history.reverse()

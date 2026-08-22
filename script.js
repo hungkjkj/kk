@@ -306,24 +306,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isBank) {
                 datasetsRoic.push({
-                    label: `${t} CASA (%)`,
-                    data: hist.map(h => (h.casa * 100).toFixed(2)),
+                    label: `${t} ROA (%)`,
+                    data: hist.map(h => (h.roa * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
                     tension: 0.4
                 });
                 datasetsDe.push({
-                    label: `${t} NIM (%)`,
-                    data: hist.map(h => (h.nim * 100).toFixed(2)),
+                    label: `${t} ROE (%)`,
+                    data: hist.map(h => (h.roe * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
                     tension: 0.4
                 });
                 datasetsCfo.push({
-                    label: `${t} LLR (%)`,
-                    data: hist.map(h => (h.llr * 100).toFixed(2)),
+                    label: `${t} NIM (%)`,
+                    data: hist.map(h => (h.nim * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
@@ -338,16 +338,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     tension: 0.4
                 });
                 datasetsIcr.push({
-                    label: `${t} NPL (%)`,
-                    data: hist.map(h => (h.npl * 100).toFixed(2)),
+                    label: `${t} Value Ratio`,
+                    data: hist.map(h => (h.value_ratio * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
                     tension: 0.4
                 });
                 datasetsEp.push({
-                    label: `${t} ROE (%)`,
-                    data: hist.map(h => (h.roe * 100).toFixed(2)),
+                    label: `${t} E/P (%)`,
+                    data: hist.map(h => (h.ep * 100).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
