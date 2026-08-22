@@ -6,10 +6,13 @@ import quant_screener
 import os
 from vnstock.core import setup_api_key
 
-# Tự động setup API Key nếu có cấu hình trên Render
-api_key = os.environ.get("VNSTOCK_API_KEY")
+# Tự động setup API Key (hoặc dùng key do user cung cấp)
+api_key = os.environ.get("VNSTOCK_API_KEY", "vnstock_8ac7b28e7fa8d51e76451f1fd5e43d2f")
 if api_key:
-    setup_api_key(api_key)
+    try:
+        setup_api_key(api_key)
+    except Exception as e:
+        print(f"Lỗi khi setup API Key: {e}")
 
 app = FastAPI(title="Exceptional Trader API")
 
@@ -68,13 +71,13 @@ def get_report(ticker: str, peers: str = "", taxRate: float = 0.2):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Phục vụ index.html mặc định
+# Phục vụ index.html mặc định từ thư mục public
 @app.get("/")
 def read_root():
-    return FileResponse("index.html")
+    return FileResponse("public/index.html")
 
-# Phục vụ các file tĩnh
-app.mount("/", StaticFiles(directory="."), name="static")
+# Phục vụ các file tĩnh chỉ từ thư mục public (ẩn source code backend)
+app.mount("/", StaticFiles(directory="public"), name="static")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
