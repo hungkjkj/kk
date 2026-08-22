@@ -181,13 +181,11 @@ def calculate_engine_bank(ticker):
     try:
         f = Finance(symbol=ticker, source='KBS')
         df_ratio = f.ratio(period='year')
-        df_bs = f.balance_sheet(period='year')
         
         try:
             df_ratio_q = f.ratio(period='quarter')
-            df_bs_q = f.balance_sheet(period='quarter')
         except:
-            df_ratio_q, df_bs_q = None, None
+            df_ratio_q = None
         
         if df_ratio is None or df_ratio.empty:
             return None
@@ -211,53 +209,39 @@ def calculate_engine_bank(ticker):
         if latest_year < current_year - 2:
             return None
             
-        npl = get_latest_q_value(df_ratio_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
-        if npl == 0: npl = get_row_value(df_ratio, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"], latest_year_str)
-        if npl == 0 and df_bs_q is not None: npl = get_latest_q_value(df_bs_q, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"])
-        if npl == 0 and df_bs is not None: npl = get_row_value(df_bs, ["nợ xấu", "NPL", "tỷ lệ nợ xấu"], latest_year_str)
+        roa = get_latest_q_value(df_ratio_q, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"])
+        if roa == 0: roa = get_row_value(df_ratio, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"], latest_year_str)
+        if roa and abs(roa) < 100: roa = roa / 100
+             
+        roe = get_latest_q_value(df_ratio_q, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
+        if roe == 0: roe = get_row_value(df_ratio, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"], latest_year_str)
+        if roe and abs(roe) > 1 and abs(roe) < 100: roe = roe / 100
              
         nim = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
         if nim == 0: nim = get_row_value(df_ratio, ["NIM", "lãi thuần", "thu nhập lãi thuần"], latest_year_str)
-        if nim and abs(nim) > 0.5: nim = nim / 100
-            
-        llr = get_latest_q_value(df_ratio_q, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"])
-        if llr == 0: llr = get_row_value(df_ratio, ["Bao phủ", "LLR", "dự phòng bao nợ xấu"], latest_year_str)
-        if llr: llr = abs(llr)
+        if nim and abs(nim) > 0.5 and abs(nim) < 100: nim = nim / 100
             
         try:
             overview_df = Company(symbol=ticker, source='VCI').overview()
-            market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
             current_price = overview_df.iloc[0].get('current_price', 0) if not overview_df.empty else 0
         except:
-            market_cap_overview = 0
             current_price = 0
             
-        equity_q = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"]) if df_bs_q is not None else 0
-        if equity_q == 0 and df_bs is not None:
-            equity_q = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity", "Vốn và các quỹ"], latest_year_str)
-            
-        if market_cap_overview > 0 and equity_q > 0:
-            mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
-            pb = mc / equity_q
-        else:
-            pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-            if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
+        pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+        if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
         
-        casa = get_latest_q_value(df_ratio_q, ["CASA", "không kỳ hạn"])
-        if casa == 0: casa = get_row_value(df_ratio, ["CASA", "không kỳ hạn"], latest_year_str)
-        if casa == 0 and df_bs_q is not None: casa = get_latest_q_value(df_bs_q, ["CASA", "không kỳ hạn"])
-        if casa == 0 and df_bs is not None: casa = get_row_value(df_bs, ["CASA", "không kỳ hạn"], latest_year_str)
-            
-        if not casa or not nim or not llr or not npl or not pb:
+        if not roa or not roe or not nim or not pb:
             return None
+            
+        value_ratio = roe / pb if pb > 0 else 0
 
         return {
             'Ticker': ticker,
-            'CASA': float(casa),
+            'ROA': float(roa),
+            'ROE': float(roe),
             'NIM': float(nim),
-            'LLR': float(llr),
-            'NPL': float(npl),
             'PB': float(pb),
+            'Value_Ratio': float(value_ratio),
             'Current_Price': float(current_price)
         }
     except Exception as e:
@@ -448,13 +432,11 @@ def run_screener_for_sector(sector):
         if df.empty:
             return []
             
-        df['Score_CASA'] = df['CASA'].rank(pct=True) * 20
-        df['Score_NIM'] = df['NIM'].rank(pct=True) * 20
-        df['Score_LLR'] = df['LLR'].rank(pct=True) * 15
-        df['Score_NPL'] = df['NPL'].rank(pct=True, ascending=False) * 25
-        df['Score_PB'] = df['PB'].rank(pct=True, ascending=False) * 20
+        df['Score_ROA'] = df['ROA'].rank(pct=True) * 40
+        df['Score_NIM'] = df['NIM'].rank(pct=True) * 30
+        df['Score_Value'] = df['Value_Ratio'].rank(pct=True) * 30
         
-        df['Total Score'] = df['Score_CASA'] + df['Score_NIM'] + df['Score_LLR'] + df['Score_NPL'] + df['Score_PB']
+        df['Total Score'] = df['Score_ROA'] + df['Score_NIM'] + df['Score_Value']
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
         return df.to_dict('records')
@@ -514,9 +496,11 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             current_price = 0
             
         if sector.lower() in ['ngân hàng', 'banks']:
-            f = Finance(symbol=ticker, source='KBS')
-            df_ratio = f.ratio(period='year')
-            df_bs = f.balance_sheet(period='year')
+            f_ratio = Finance(symbol=ticker, source='KBS')
+            df_ratio = f_ratio.ratio(period='year')
+            
+            f_bs = Finance(symbol=ticker, source='VCI')
+            df_bs = f_bs.balance_sheet(period='year')
             
             if df_ratio is None or df_ratio.empty:
                 return None
@@ -536,12 +520,6 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             
             history = []
             num_years = min(len(years_cols), 5)
-            
-            try:
-                f_vci = Finance(symbol=ticker, source='VCI')
-                df_vci = f_vci.ratio(period='year')
-            except:
-                df_vci = None
                 
             for i in range(num_years):
                 target_year_str = str(latest_year - i)
@@ -563,24 +541,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 casa = 0.0
                 npl = 0.0
                 
-                if df_vci is not None and not df_vci.empty and df_vci.shape[1] > 3 + i:
-                    try:
-                        c_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('CASA', case=False, na=False)]
-                        if not c_match.empty:
-                            casa = float(c_match.iloc[0, 3+i])
-                            
-                        n_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('Nợ xấu', case=False, na=False)]
-                        if not n_match.empty:
-                            npl = float(n_match.iloc[0, 3+i])
-                            
-                        l_match = df_vci[df_vci.iloc[:,0].astype(str).str.contains('DP rủi ro/Nợ xấu', case=False, na=False)]
-                        if not l_match.empty:
-                            l_val = float(l_match.iloc[0, 3+i])
-                            if l_val:
-                                llr = abs(l_val)
-                    except:
-                        pass
-                
+
                 history.append({
                     'year': target_year_str,
                     'casa': casa,
@@ -604,33 +565,33 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 latest_q_str = get_latest_quarter_str(df_ratio_q, ["ROE", "P/B"])
             latest_y_str = str(history[-1]['year']) if history else ""
                 
-            npl_q = history[-1]['npl'] if history else 0
-            
-            roe_ttm_q = get_latest_q_value(df_ratio_q, ["ROE bình quân"])
-            if roe_ttm_q and abs(roe_ttm_q) > 1: roe_ttm_q = roe_ttm_q / 100
-            
-            nim_q = get_latest_q_value(df_ratio_q, ["NIM"])
-            if nim_q == 0: nim_q = history[-1]['nim'] if history else 0
-            if nim_q and abs(nim_q) > 0.5: nim_q = nim_q / 100
+            roa_q = get_latest_q_value(df_ratio_q, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"])
+            if roa_q == 0: roa_q = history[-1].get('roa', 0) if history else 0
+            if roa_q and abs(roa_q) < 100: roa_q = roa_q / 100
                 
-            llr_q = history[-1]['llr'] if history else 0
+            roe_q = get_latest_q_value(df_ratio_q, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
+            if roe_q == 0: roe_q = history[-1].get('roe', 0) if history else 0
+            if roe_q and abs(roe_q) > 1 and abs(roe_q) < 100: roe_q = roe_q / 100
+            
+            nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
+            if nim_q == 0: nim_q = history[-1].get('nim', 0) if history else 0
+            if nim_q and abs(nim_q) > 0.5 and abs(nim_q) < 100: nim_q = nim_q / 100
                 
             pb_q = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
-            if pb_q == 0: pb_q = history[-1]['pb'] if history else 0
+            if pb_q == 0: pb_q = history[-1].get('pb', 0) if history else 0
             
-            casa_q = history[-1]['casa'] if history else 0
+            value_ratio_q = (roe_q / pb_q) if pb_q and pb_q > 0 else 0
 
             return {
                 'ticker': ticker,
                 'company_name': company_name,
                 'sector': 'Ngân hàng',
                 'summary': {
-                    'CASA_Current': float(casa_q) if casa_q else 0,
+                    'ROA_Current': float(roa_q) if roa_q else 0,
+                    'ROE_Current': float(roe_q) if roe_q else 0,
                     'NIM_Current': float(nim_q) if nim_q else 0,
-                    'LLR_Current': float(llr_q) if llr_q else 0,
-                    'NPL_Current': float(npl_q) if npl_q else 0,
                     'PB_Current': float(pb_q) if pb_q else 0,
-                    'ROE_TTM': float(roe_ttm_q) if roe_ttm_q else 0,
+                    'Value_Ratio_Current': float(value_ratio_q) if value_ratio_q else 0,
                     'Current_Price': float(current_price) if current_price else 0,
                     'Latest_Quarter': latest_q_str,
                     'Latest_Year': latest_y_str
@@ -860,11 +821,12 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             is_bank = True
             rank_data.append({
                 'ticker': t,
-                'CASA_Current': summary.get('CASA_Current', 0),
+                'ROA_Current': summary.get('ROA_Current', 0),
+                'ROE_Current': summary.get('ROE_Current', 0),
                 'NIM_Current': summary.get('NIM_Current', 0),
-                'LLR_Current': summary.get('LLR_Current', 0),
-                'NPL_Current': summary.get('NPL_Current', 0),
-                'PB_Current': summary.get('PB_Current', 0)
+                'PB_Current': summary.get('PB_Current', 0),
+                'Value_Ratio_Current': summary.get('Value_Ratio_Current', 0),
+                'Current_Price': summary.get('Current_Price', 0)
             })
         else:
             rank_data.append({
@@ -883,12 +845,10 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
     df_rank = pd.DataFrame(rank_data)
     if not df_rank.empty:
         if is_bank:
-            df_rank['Score_CASA'] = df_rank['CASA_Current'].rank(pct=True) * 20
-            df_rank['Score_NIM'] = df_rank['NIM_Current'].rank(pct=True) * 20
-            df_rank['Score_LLR'] = df_rank['LLR_Current'].rank(pct=True) * 15
-            df_rank['Score_NPL'] = df_rank['NPL_Current'].rank(pct=True, ascending=False) * 25
-            df_rank['Score_PB'] = df_rank['PB_Current'].rank(pct=True, ascending=False) * 20
-            df_rank['Total_Score'] = df_rank['Score_CASA'] + df_rank['Score_NIM'] + df_rank['Score_LLR'] + df_rank['Score_NPL'] + df_rank['Score_PB']
+            df_rank['Score_ROA'] = df_rank['ROA_Current'].rank(pct=True) * 40
+            df_rank['Score_NIM'] = df_rank['NIM_Current'].rank(pct=True) * 30
+            df_rank['Score_Value'] = df_rank['Value_Ratio_Current'].rank(pct=True) * 30
+            df_rank['Total_Score'] = df_rank['Score_ROA'] + df_rank['Score_NIM'] + df_rank['Score_Value']
         else:
             df_rank['Score_ROIC'] = df_rank['ROIC_5Y'].rank(pct=True) * 15
             df_rank['Score_ROIC_TTM'] = df_rank['ROIC_TTM'].rank(pct=True) * 25

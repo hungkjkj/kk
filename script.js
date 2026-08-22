@@ -128,11 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CASA</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">LLR</th>
-                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NPL</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROA (%)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROE (%)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM (%)</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Value Ratio</th>
                     </tr>
                 `;
             } else {
@@ -180,11 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${idx + 1}</td>
                             <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
                             <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
-                            <td style="padding: 12px;">${(r.CASA_Current * 100).toFixed(1)}%</td>
+                            <td style="padding: 12px;">${(r.ROA_Current * 100).toFixed(2)}%</td>
+                            <td style="padding: 12px;">${(r.ROE_Current * 100).toFixed(1)}%</td>
                             <td style="padding: 12px;">${(r.NIM_Current * 100).toFixed(1)}%</td>
-                            <td style="padding: 12px;">${(r.LLR_Current * 100).toFixed(1)}%</td>
-                            <td style="padding: 12px;">${(r.NPL_Current * 100).toFixed(1)}%</td>
                             <td style="padding: 12px; ${pbStyle}">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
+                            <td style="padding: 12px; color: #10b981; font-weight: bold;">${(r.Value_Ratio_Current * 100).toFixed(1)}</td>
                         </tr>
                     `;
                 } else {
@@ -225,29 +225,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isBank) {
             summaryCards.innerHTML = `
-                <div class="card" title="Tỷ suất lợi nhuận ròng trên vốn chủ sở hữu (TTM): Lợi nhuận sau thuế 4 quý gần nhất / Vốn chủ sở hữu.">
-                    <h3>ROE (TTM) ⓘ</h3>
-                    <p>${formatPct(summary.ROE_TTM)}${tQ}</p>
+                <div class="card" title="Sinh lời trên Tổng Tài Sản (ROA): Hiệu quả sử dụng tài sản, bao hàm cả chất lượng tài sản (nợ xấu).">
+                    <h3>ROA ⓘ</h3>
+                    <p>${formatPct(summary.ROA_Current)}${tQ}</p>
                 </div>
-                <div class="card" title="Tỷ lệ Tiền gửi không kỳ hạn / Tổng tiền gửi khách hàng.">
-                    <h3>CASA ⓘ</h3>
-                    <p>${formatPct(summary.CASA_Current)}${tY}</p>
+                <div class="card" title="Sinh lời trên Vốn Chủ Sở Hữu (ROE): Lợi nhuận sinh ra từ vốn của cổ đông.">
+                    <h3>ROE ⓘ</h3>
+                    <p>${formatPct(summary.ROE_Current)}${tQ}</p>
                 </div>
-                <div class="card" title="Biên lãi thuần (Net Interest Margin): Thu nhập lãi thuần / Tài sản sinh lãi bình quân.">
+                <div class="card" title="Biên lãi thuần (Net Interest Margin): Khả năng sinh lời cốt lõi từ tín dụng.">
                     <h3>NIM ⓘ</h3>
                     <p>${formatPct(summary.NIM_Current)}${tQ}</p>
-                </div>
-                <div class="card" title="Tỷ lệ bao phủ nợ xấu (Loan Loss Reserve): Dự phòng rủi ro tín dụng / Tổng nợ xấu.">
-                    <h3>LLR ⓘ</h3>
-                    <p>${formatPct(summary.LLR_Current)}${tY}</p>
-                </div>
-                <div class="card" title="Tỷ lệ nợ xấu (Non-Performing Loan): Nợ nhóm 3,4,5 / Tổng dư nợ.">
-                    <h3>NPL ⓘ</h3>
-                    <p>${formatPct(summary.NPL_Current)}${tY}</p>
                 </div>
                 <div class="card" title="Chỉ số Giá trên Sổ sách (Price to Book).">
                     <h3>P/B (Current) ⓘ</h3>
                     <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}${tQ}</p>
+                </div>
+                <div class="card" title="Tỷ số Giá trị = ROE / P/B. Càng cao càng hấp dẫn.">
+                    <h3>Value Ratio ⓘ</h3>
+                    <p style="color: #10b981; font-weight: bold;">${formatNum(summary.Value_Ratio_Current * 100)}</p>
                 </div>
             `;
         } else {
