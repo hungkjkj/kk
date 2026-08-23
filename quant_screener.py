@@ -432,9 +432,9 @@ def run_screener_for_sector(sector):
         if df.empty:
             return []
             
-        df['Score_ROA'] = df['ROA'].rank(pct=True) * 40
-        df['Score_NIM'] = df['NIM'].rank(pct=True) * 30
-        df['Score_Value'] = df['Value_Ratio'].rank(pct=True) * 30
+        df['Score_ROA'] = (df['ROA'] * 100) * 40
+        df['Score_NIM'] = (df['NIM'] * 100) * 30
+        df['Score_Value'] = df['Value_Ratio'] * 30
         
         df['Total Score'] = df['Score_ROA'] + df['Score_NIM'] + df['Score_Value']
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
