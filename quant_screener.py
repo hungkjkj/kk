@@ -209,11 +209,11 @@ def calculate_engine_bank(ticker):
         if latest_year < current_year - 2:
             return None
             
-        roa = get_latest_q_value(df_ratio_q, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"])
+        roa = get_latest_q_value(df_ratio_q, ["ROA bình quân 4 quý", "roa_trailling", "ROAA", "ROA", "sinh lợi trên tổng tài sản"])
         if roa == 0: roa = get_row_value(df_ratio, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"], latest_year_str)
         if roa and abs(roa) < 100: roa = roa / 100
              
-        roe = get_latest_q_value(df_ratio_q, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
+        roe = get_latest_q_value(df_ratio_q, ["ROE bình quân 4 quý", "roe_trailling", "ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
         if roe == 0: roe = get_row_value(df_ratio, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"], latest_year_str)
         if roe and abs(roe) > 1 and abs(roe) < 100: roe = roe / 100
              
@@ -565,11 +565,11 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 latest_q_str = get_latest_quarter_str(df_ratio_q, ["ROE", "P/B"])
             latest_y_str = str(history[-1]['year']) if history else ""
                 
-            roa_q = get_latest_q_value(df_ratio_q, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"])
+            roa_q = get_latest_q_value(df_ratio_q, ["ROA bình quân 4 quý", "roa_trailling", "ROAA", "ROA", "sinh lợi trên tổng tài sản"])
             if roa_q == 0: roa_q = history[-1].get('roa', 0) if history else 0
             if roa_q and abs(roa_q) < 100: roa_q = roa_q / 100
                 
-            roe_q = get_latest_q_value(df_ratio_q, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
+            roe_q = get_latest_q_value(df_ratio_q, ["ROE bình quân 4 quý", "roe_trailling", "ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
             if roe_q == 0: roe_q = history[-1].get('roe', 0) if history else 0
             if roe_q and abs(roe_q) > 1 and abs(roe_q) < 100: roe_q = roe_q / 100
             
