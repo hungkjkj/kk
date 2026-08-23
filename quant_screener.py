@@ -664,7 +664,14 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             ep = 1 / pe if pe and pe != 0 else 0
             
             # Tính ICR
-            icr = get_row_value(df_ratio, ["Khả năng thanh toán lãi vay", "ICR"], year_str=ratio_year_str)
+            interest = get_row_value(df_is, ["Chi phí lãi vay", "Interest expense"], year_str=target_year_str)
+            if interest and interest != 0:
+                icr = ebit / abs(interest)
+            else:
+                icr = get_row_value(df_ratio, ["Khả năng thanh toán lãi vay", "ICR"], year_str=ratio_year_str)
+                
+            if icr and icr > 50:
+                icr = 50.0
                 
             history.append({
                 'year': target_year_str,
@@ -747,6 +754,9 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             elif df_ratio_q is not None and not df_ratio_q.empty:
                 icr_q = get_latest_q_value(df_ratio_q, ["Khả năng thanh toán lãi vay", "ICR"])
                 if icr_q: current_icr = float(icr_q)
+                
+            if current_icr and current_icr > 50:
+                current_icr = 50.0
                 
             cfo_ttm = get_ttm_value(df_cf_q, ["Lưu chuyển tiền tệ ròng từ các hoạt động sản xuất kinh doanh", "Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"]) if df_cf_q is not None else 0
             tax_rate_ttm = tax_ttm / ebt_ttm if ebt_ttm > 0 else tax_rate_fallback
