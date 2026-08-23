@@ -414,6 +414,37 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         return None
 
 def run_screener_for_sector(sector):
+    import json
+    import os
+    from datetime import datetime
+    
+    CACHE_DIR = "cache"
+    if not os.path.exists(CACHE_DIR):
+        try:
+            os.makedirs(CACHE_DIR)
+        except:
+            pass
+            
+    safe_sector = "".join([c if c.isalnum() else "_" for c in sector])
+    today = datetime.now().strftime("%Y-%m-%d")
+    screener_cache_file = os.path.join(CACHE_DIR, f"screener_{safe_sector}_{today}.json")
+    medians_cache_file = os.path.join(CACHE_DIR, f"medians_{safe_sector}_{today}.json")
+    
+    if os.path.exists(screener_cache_file):
+        try:
+            with open(screener_cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            pass
+            
+    # Clean old caches occasionally
+    try:
+        for filename in os.listdir(CACHE_DIR):
+            if filename.endswith(".json") and today not in filename:
+                os.remove(os.path.join(CACHE_DIR, filename))
+    except:
+        pass
+
     tickers = get_tickers_by_sector(sector)
     if not tickers:
         return []
@@ -442,14 +473,30 @@ def run_screener_for_sector(sector):
         if pd.isna(median_nim) or median_nim == 0: median_nim = 0.035
         if pd.isna(median_value) or median_value == 0: median_value = 10.0
             
-        df['Score_ROA'] = (df['ROA'] / median_roa) * 40
-        df['Score_NIM'] = (df['NIM'] / median_nim) * 30
-        df['Score_Value'] = (df['Value_Ratio'] / median_value) * 30
+        try:
+            with open(medians_cache_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'median_roa': float(median_roa),
+                    'median_nim': float(median_nim),
+                    'median_value': float(median_value)
+                }, f)
+        except:
+            pass
+
+        df['Score_ROA'] = (df['ROA'] / median_roa) * 100
+        df['Score_NIM'] = (df['NIM'] / median_nim) * 100
+        df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
         
-        df['Total Score'] = df['Score_ROA'] + df['Score_NIM'] + df['Score_Value']
+        df['Total Score'] = (df['Score_ROA'] * 0.40) + (df['Score_NIM'] * 0.30) + (df['Score_Value'] * 0.30)
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
-        return df.to_dict('records')
+        
+        final_results = df.to_dict('records')
+        try:
+            df.to_json(screener_cache_file, orient='records', force_ascii=False)
+        except Exception as e:
+            print("CACHE ERROR:", e)
+        return final_results
     else:
         for ticker in top_tickers:
             res = calculate_engine(ticker)
@@ -460,18 +507,51 @@ def run_screener_for_sector(sector):
         if df.empty:
             return []
             
-        # SCORING
-        df['Score_ROIC'] = df['ROIC_5Y'].rank(pct=True) * 100
-        df['Score_ROIC_TTM'] = df['ROIC_TTM'].rank(pct=True) * 100
-        df['Score_Value'] = df['Value_Ratio'].rank(pct=True) * 100
+        # SCORING - Absolute Median Normalization
+        median_roic = df['ROIC_5Y'].median()
+        median_roic_ttm = df['ROIC_TTM'].median()
+        median_value = df['Value_Ratio'].median()
+        median_bp = df['BP_5Y'].median() if 'BP_5Y' in df.columns else 10.0
+        median_cfo = df['CFO_Quality'].median()
+        median_cfo_ttm = df['CFO_Quality_TTM'].median()
+        median_de = df['DE_5Y'].median()
+        median_de_curr = df['DE_Current'].median()
         
-        df['Score_CFO'] = df['CFO_Quality'].rank(pct=True) * 100
+        if pd.isna(median_roic) or median_roic == 0: median_roic = 0.10
+        if pd.isna(median_roic_ttm) or median_roic_ttm == 0: median_roic_ttm = 0.10
+        if pd.isna(median_value) or median_value == 0: median_value = 10.0
+        if pd.isna(median_bp) or median_bp == 0: median_bp = 10.0
+        if pd.isna(median_cfo) or median_cfo == 0: median_cfo = 1.0
+        if pd.isna(median_cfo_ttm) or median_cfo_ttm == 0: median_cfo_ttm = 1.0
+        if pd.isna(median_de) or median_de == 0: median_de = 1.0
+        if pd.isna(median_de_curr) or median_de_curr == 0: median_de_curr = 1.0
+        
+        try:
+            with open(medians_cache_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'median_roic': float(median_roic),
+                    'median_roic_ttm': float(median_roic_ttm),
+                    'median_value': float(median_value),
+                    'median_bp': float(median_bp),
+                    'median_cfo': float(median_cfo),
+                    'median_cfo_ttm': float(median_cfo_ttm),
+                    'median_de': float(median_de),
+                    'median_de_curr': float(median_de_curr)
+                }, f)
+        except:
+            pass
+
+        df['Score_ROIC'] = (df['ROIC_5Y'] / median_roic) * 100
+        df['Score_ROIC_TTM'] = (df['ROIC_TTM'] / median_roic_ttm) * 100
+        df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
+        
+        df['Score_CFO'] = (df['CFO_Quality'] / median_cfo) * 100
         df.loc[df['CFO_Quality'] < 0, 'Score_CFO'] = 0
-        df['Score_CFO_TTM'] = df['CFO_Quality_TTM'].rank(pct=True) * 100
+        df['Score_CFO_TTM'] = (df['CFO_Quality_TTM'] / median_cfo_ttm) * 100
         df.loc[df['CFO_Quality_TTM'] < 0, 'Score_CFO_TTM'] = 0
         
-        df['Score_DE'] = df['DE_5Y'].rank(pct=True, ascending=False) * 100
-        df['Score_DE_Current'] = df['DE_Current'].rank(pct=True, ascending=False) * 100
+        df['Score_DE'] = np.maximum(0, 2 - (df['DE_5Y'] / median_de)) * 100
+        df['Score_DE_Current'] = np.maximum(0, 2 - (df['DE_Current'] / median_de_curr)) * 100
         
         df['Total Score'] = (df['Score_ROIC'] * 0.15) + (df['Score_ROIC_TTM'] * 0.25) + \
                             (df['Score_Value'] * 0.20) + \
@@ -479,11 +559,14 @@ def run_screener_for_sector(sector):
                             (df['Score_DE'] * 0.05) + (df['Score_DE_Current'] * 0.10)
                             
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
-        
-        # Fill NA and clean before returning
         df = df.fillna(0)
         
-        return df.to_dict('records')
+        final_results = df.to_dict('records')
+        try:
+            df.to_json(screener_cache_file, orient='records', force_ascii=False)
+        except Exception as e:
+            print("CACHE ERROR:", e)
+        return final_results
 
 def get_stock_report(ticker, tax_rate_fallback=0.2):
     try:
@@ -806,6 +889,34 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             pass
         return None
 
+def get_sector_medians(sector):
+    if not sector: return {}
+    import os, json
+    from datetime import datetime
+    
+    CACHE_DIR = "cache"
+    safe_sector = "".join([c if c.isalnum() else "_" for c in sector])
+    today = datetime.now().strftime("%Y-%m-%d")
+    medians_cache_file = os.path.join(CACHE_DIR, f"medians_{safe_sector}_{today}.json")
+    
+    if os.path.exists(medians_cache_file):
+        try:
+            with open(medians_cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            pass
+            
+    # Nếu chưa có cache, gọi hàm để fetch top 10 và tạo cache
+    run_screener_for_sector(sector)
+    
+    if os.path.exists(medians_cache_file):
+        try:
+            with open(medians_cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
 def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
     import re
     tickers = [main_ticker]
@@ -851,32 +962,54 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
                 'ticker': t,
                 'ROIC_5Y': summary.get('ROIC_5Y', 0),
                 'ROIC_TTM': summary.get('ROIC_TTM', 0),
-                'BP_5Y': summary.get('BP_5Y', 0),
+                'Value_Ratio': summary.get('Value_Ratio', 0),
                 'CFO_Quality': summary.get('CFO_Quality', 0),
                 'CFO_Quality_TTM': summary.get('CFO_Quality_TTM', 0),
-                'ED_5Y': summary.get('ED_5Y', 0),
+                'DE_5Y': summary.get('DE_5Y', 0),
                 'DE_Current': summary.get('DE_Current', 0),
-                'ICR_Current': summary.get('ICR_Current', 0),
                 'PB_Current': summary.get('PB_Current', 0)
             })
     
     df_rank = pd.DataFrame(rank_data)
     if not df_rank.empty:
+        # Lấy median của sector từ main_ticker
+        main_sector = reports[main_ticker]['sector'] if main_ticker in reports else ""
+        medians = get_sector_medians(main_sector)
+        
         if is_bank:
-            df_rank['Score_ROA'] = df_rank['ROA_Current'].rank(pct=True) * 40
-            df_rank['Score_NIM'] = df_rank['NIM_Current'].rank(pct=True) * 30
-            df_rank['Score_Value'] = df_rank['Value_Ratio_Current'].rank(pct=True) * 30
-            df_rank['Total_Score'] = df_rank['Score_ROA'] + df_rank['Score_NIM'] + df_rank['Score_Value']
+            m_roa = medians.get('median_roa', 0.02)
+            m_nim = medians.get('median_nim', 0.035)
+            m_value = medians.get('median_value', 10.0)
+            
+            df_rank['Score_ROA'] = (df_rank['ROA_Current'] / m_roa) * 100
+            df_rank['Score_NIM'] = (df_rank['NIM_Current'] / m_nim) * 100
+            df_rank['Score_Value'] = (df_rank['Value_Ratio_Current'] / m_value) * 100
+            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.40) + (df_rank['Score_NIM'] * 0.30) + (df_rank['Score_Value'] * 0.30)
         else:
-            df_rank['Score_ROIC'] = df_rank['ROIC_5Y'].rank(pct=True) * 15
-            df_rank['Score_ROIC_TTM'] = df_rank['ROIC_TTM'].rank(pct=True) * 25
-            df_rank['Score_BP'] = df_rank['BP_5Y'].rank(pct=True) * 20
-            df_rank['Score_CFO'] = df_rank['CFO_Quality'].rank(pct=True) * 10
-            df_rank['Score_CFO_TTM'] = df_rank['CFO_Quality_TTM'].rank(pct=True) * 15
-            df_rank['Score_DE'] = df_rank['ED_5Y'].rank(pct=True) * 5
-            df_rank['Score_DE_Current'] = df_rank['DE_Current'].rank(pct=True, ascending=False) * 10
-            df_rank['Score_ICR'] = df_rank['ICR_Current'].rank(pct=True) * 5
-            df_rank['Total_Score'] = df_rank['Score_ROIC'] + df_rank['Score_ROIC_TTM'] + df_rank['Score_BP'] + df_rank['Score_CFO'] + df_rank['Score_CFO_TTM'] + df_rank['Score_DE'] + df_rank['Score_DE_Current'] + df_rank['Score_ICR']
+            m_roic = medians.get('median_roic', 0.10)
+            m_roic_ttm = medians.get('median_roic_ttm', 0.10)
+            m_value = medians.get('median_value', 10.0)
+            m_cfo = medians.get('median_cfo', 1.0)
+            m_cfo_ttm = medians.get('median_cfo_ttm', 1.0)
+            m_de = medians.get('median_de', 1.0)
+            m_de_curr = medians.get('median_de_curr', 1.0)
+
+            df_rank['Score_ROIC'] = (df_rank['ROIC_5Y'] / m_roic) * 100
+            df_rank['Score_ROIC_TTM'] = (df_rank['ROIC_TTM'] / m_roic_ttm) * 100
+            df_rank['Score_Value'] = (df_rank['Value_Ratio'] / m_value) * 100
+            
+            df_rank['Score_CFO'] = (df_rank['CFO_Quality'] / m_cfo) * 100
+            df_rank.loc[df_rank['CFO_Quality'] < 0, 'Score_CFO'] = 0
+            df_rank['Score_CFO_TTM'] = (df_rank['CFO_Quality_TTM'] / m_cfo_ttm) * 100
+            df_rank.loc[df_rank['CFO_Quality_TTM'] < 0, 'Score_CFO_TTM'] = 0
+            
+            df_rank['Score_DE'] = np.maximum(0, 2 - (df_rank['DE_5Y'] / m_de)) * 100
+            df_rank['Score_DE_Current'] = np.maximum(0, 2 - (df_rank['DE_Current'] / m_de_curr)) * 100
+            
+            df_rank['Total_Score'] = (df_rank['Score_ROIC'] * 0.15) + (df_rank['Score_ROIC_TTM'] * 0.25) + \
+                                     (df_rank['Score_Value'] * 0.20) + \
+                                     (df_rank['Score_CFO'] * 0.10) + (df_rank['Score_CFO_TTM'] * 0.15) + \
+                                     (df_rank['Score_DE'] * 0.05) + (df_rank['Score_DE_Current'] * 0.10)
         
         df_rank = df_rank.fillna(0)
         df_rank = df_rank.sort_values(by='Total_Score', ascending=False)
