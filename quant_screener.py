@@ -432,9 +432,19 @@ def run_screener_for_sector(sector):
         if df.empty:
             return []
             
-        df['Score_ROA'] = (df['ROA'] * 100) * 40
-        df['Score_NIM'] = (df['NIM'] * 100) * 30
-        df['Score_Value'] = df['Value_Ratio'] * 30
+        # Tính trung vị (Median) của Top 10 Ngân hàng lớn nhất để làm quy chuẩn chung
+        median_roa = df['ROA'].median()
+        median_nim = df['NIM'].median()
+        median_value = df['Value_Ratio'].median()
+        
+        # Fallback nếu trung vị lỗi hoặc bằng 0
+        if pd.isna(median_roa) or median_roa == 0: median_roa = 0.02
+        if pd.isna(median_nim) or median_nim == 0: median_nim = 0.035
+        if pd.isna(median_value) or median_value == 0: median_value = 10.0
+            
+        df['Score_ROA'] = (df['ROA'] / median_roa) * 40
+        df['Score_NIM'] = (df['NIM'] / median_nim) * 30
+        df['Score_Value'] = (df['Value_Ratio'] / median_value) * 30
         
         df['Total Score'] = df['Score_ROA'] + df['Score_NIM'] + df['Score_Value']
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
