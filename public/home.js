@@ -81,6 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 data.data.slice(0, 10).forEach((r, idx) => {
+                    const t = r.ticker || r.Ticker || r.TICKER;
+                    const score = r['Total Score'] || r.Total_Score || 0;
+                    
                     if (isBank) {
                         const roa = r.ROA ? (r.ROA * 100).toFixed(1) + '%' : '-';
                         const nim = r.NIM ? (r.NIM * 100).toFixed(1) + '%' : '-';
@@ -89,8 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td>${idx + 1}</td>
-                                <td style="color: #38bdf8; font-weight: bold;">${r.ticker}</td>
-                                <td style="color: #fbbf24; font-weight: bold;">${(r['Total Score'] || 0).toFixed(1)}</td>
+                                <td style="color: #38bdf8; font-weight: bold;">${t}</td>
+                                <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
                                 <td>${roa}</td>
                                 <td>${nim}</td>
                                 <td style="color: #10b981;">${val}</td>
@@ -104,8 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td>${idx + 1}</td>
-                                <td style="color: #38bdf8; font-weight: bold;">${r.ticker}</td>
-                                <td style="color: #fbbf24; font-weight: bold;">${(r.Total_Score || 0).toFixed(1)}</td>
+                                <td style="color: #38bdf8; font-weight: bold;">${t}</td>
+                                <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
                                 <td>${roic}</td>
                                 <td>${cfo}</td>
                                 <td style="color: #10b981;">${val}</td>
