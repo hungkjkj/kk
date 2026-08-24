@@ -487,7 +487,7 @@ def run_screener_for_sector(sector):
         df['Score_NIM'] = (df['NIM'] / median_nim) * 100
         df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
         
-        df['Total Score'] = (df['Score_ROA'] * 0.40) + (df['Score_NIM'] * 0.30) + (df['Score_Value'] * 0.30)
+        df['Total Score'] = (df['Score_ROA'] * 0.50) + (df['Score_NIM'] * 0.15) + (df['Score_Value'] * 0.35)
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
         

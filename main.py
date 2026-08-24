@@ -76,6 +76,10 @@ def get_report(ticker: str, peers: str = "", taxRate: float = 0.2):
 def read_root():
     return FileResponse("public/index.html")
 
+@app.get("/compare")
+def read_compare():
+    return FileResponse("public/compare.html")
+
 # Phục vụ các file tĩnh chỉ từ thư mục public (ẩn source code backend)
 app.mount("/", StaticFiles(directory="public"), name="static")
 
