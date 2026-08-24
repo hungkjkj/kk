@@ -31,6 +31,16 @@ def get_available_sectors():
 
 def get_tickers_by_sector(sector):
     """ Lấy danh sách ticker thuộc một ngành cụ thể. """
+    s = sector.lower()
+    if s in ['ngân hàng', 'banks']:
+        return ["VCB", "BID", "CTG", "TCB", "VPB", "MBB", "ACB", "STB", "HDB", "VIB", "TPB", "SHB", "LPB", "SSB", "MSB", "OCB", "EIB", "NAB"]
+    elif s == 'bán lẻ':
+        return ["MWG", "PNJ", "FRT", "DGW", "PET"]
+    elif s == 'công nghệ thông tin':
+        return ["FPT", "CMG", "ELC", "ITD"]
+    elif s == 'xây dựng và vật liệu':
+        return ["HPG", "HSG", "NKG", "VCG", "CTD", "HBC", "HT1", "BCC"]
+
     try:
         df = Listing().symbols_by_industries()
         if df is not None and not df.empty and 'industry_name' in df.columns:
