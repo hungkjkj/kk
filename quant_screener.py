@@ -179,8 +179,8 @@ def get_latest_quarter_str(df, keywords):
     except: pass
     return ""
 
-def get_top_market_cap(tickers, limit=10):
-    """ Lấy danh sách Top 10 mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
+def get_top_market_cap(tickers, limit=20):
+    """ Lấy danh sách Top mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
     try:
         vn100_data = Listing().symbols_by_group('VN100')
         if vn100_data is not None and not vn100_data.empty:
@@ -438,7 +438,7 @@ def run_screener_for_sector(sector, force_update=False):
     if not tickers:
         return []
         
-    top_tickers = get_top_market_cap(tickers, limit=10)
+    top_tickers = get_top_market_cap(tickers, limit=20)
     
     results = []
     
