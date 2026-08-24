@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <input type="text" class="group-title-input" value="${groupName}" placeholder="Tên nhóm (VD: Công nghệ)">
                 <button class="btn-remove-group">Xóa Nhóm</button>
             </div>
-            <textarea class="tickers-input" placeholder="Nhập mã cổ phiếu, cách nhau bằng dấu phẩy. VD: FPT, CMG, VCB">${tickers.join(', ')}</textarea>
-            <div class="input-hint">Tối đa 20 mã cổ phiếu. Ký tự cách hay viết thường đều được.</div>
+            <textarea class="tickers-input" placeholder="Nhập mã cổ phiếu cách nhau bằng dấu phẩy hoặc khoảng trắng. VD: FPT CMG VCB">${tickers.join(', ')}</textarea>
+            <div class="input-hint">Tối đa 20 mã cổ phiếu. Dùng dấu phẩy, khoảng trắng hay xuống dòng đều được.</div>
         `;
         
         div.querySelector('.btn-remove-group').addEventListener('click', () => {
@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (!name) return;
             
-            const tickers = tickersStr.split(',')
+            // Tự động phân tách bằng dấu phẩy, khoảng trắng hoặc xuống dòng
+            const tickers = tickersStr.split(/[\s,]+/)
                 .map(t => t.trim().toUpperCase())
                 .filter(t => t.length > 0);
                 
