@@ -170,7 +170,21 @@ def get_top_market_cap(tickers, limit=10):
                 vn100_symbols = []
                 
             # Lọc các mã trong ngành có mặt trong rổ VN100 (những công ty đầu ngành)
-            top_tickers = [t for t in tickers if t in vn100_symbols]
+            top_vn100_tickers = [t for t in tickers if t in vn100_symbols]
+            
+            # Lấy market_cap để sort chính xác
+            ticker_mcaps = []
+            for t in top_vn100_tickers:
+                try:
+                    df = Company(symbol=t, source='VCI').overview()
+                    mcap = df.iloc[0].get('market_cap', 0) if not df.empty else 0
+                    ticker_mcaps.append((t, mcap))
+                except:
+                    ticker_mcaps.append((t, 0))
+                    
+            # Sắp xếp theo vốn hóa giảm dần
+            ticker_mcaps.sort(key=lambda x: x[1], reverse=True)
+            top_tickers = [x[0] for x in ticker_mcaps]
             
             # Nếu ngành nhỏ không đủ 10 mã trong VN100, lấy thêm các mã ngoài cho đủ limit
             for t in tickers:
