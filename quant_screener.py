@@ -984,7 +984,7 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             df_rank['Score_ROA'] = (df_rank['ROA_Current'] / m_roa) * 100
             df_rank['Score_NIM'] = (df_rank['NIM_Current'] / m_nim) * 100
             df_rank['Score_Value'] = (df_rank['Value_Ratio_Current'] / m_value) * 100
-            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.40) + (df_rank['Score_NIM'] * 0.30) + (df_rank['Score_Value'] * 0.30)
+            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.50) + (df_rank['Score_NIM'] * 0.15) + (df_rank['Score_Value'] * 0.35)
         else:
             m_roic = medians.get('median_roic', 0.10)
             m_roic_ttm = medians.get('median_roic_ttm', 0.10)
