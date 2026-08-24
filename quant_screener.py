@@ -513,11 +513,11 @@ def run_screener_for_sector(sector):
             pass
 
         df['Score_ROA'] = (df['ROA'] / median_roa) * 100
-        df['Score_NIM'] = (df['NIM'] / median_nim) * 100
+        df['Score_NIM'] = (df['NIM'].clip(upper=0.045) / median_nim) * 100
         df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
         df['Score_EQ'] = (df['Equity_Ratio'] / median_eq) * 100
         
-        df['Total Score'] = (df['Score_ROA'] * 0.30) + (df['Score_Value'] * 0.30) + (df['Score_NIM'] * 0.20) + (df['Score_EQ'] * 0.20)
+        df['Total Score'] = (df['Score_Value'] * 0.30) + (df['Score_EQ'] * 0.25) + (df['Score_ROA'] * 0.25) + (df['Score_NIM'] * 0.20)
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
         
@@ -1013,10 +1013,10 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             m_eq = medians.get('median_eq', 0.1)
             
             df_rank['Score_ROA'] = (df_rank['ROA_Current'] / m_roa) * 100
-            df_rank['Score_NIM'] = (df_rank['NIM_Current'] / m_nim) * 100
+            df_rank['Score_NIM'] = (df_rank['NIM_Current'].clip(upper=0.045) / m_nim) * 100
             df_rank['Score_Value'] = (df_rank['Value_Ratio_Current'] / m_value) * 100
             df_rank['Score_EQ'] = (df_rank['Equity_Ratio_Current'] / m_eq) * 100
-            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.30) + (df_rank['Score_Value'] * 0.30) + (df_rank['Score_NIM'] * 0.20) + (df_rank['Score_EQ'] * 0.20)
+            df_rank['Total_Score'] = (df_rank['Score_Value'] * 0.30) + (df_rank['Score_EQ'] * 0.25) + (df_rank['Score_ROA'] * 0.25) + (df_rank['Score_NIM'] * 0.20)
         else:
             m_roic = medians.get('median_roic', 0.10)
             m_roic_ttm = medians.get('median_roic_ttm', 0.10)
