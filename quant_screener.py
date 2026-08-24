@@ -461,6 +461,18 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
     except Exception:
         return None
 
+import threading
+_scrape_lock = threading.Lock()
+
+def with_lock(lock):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with lock:
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@with_lock(_scrape_lock)
 def run_screener_for_sector(sector):
     import json
     import os
