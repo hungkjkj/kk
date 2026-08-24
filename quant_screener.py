@@ -480,6 +480,7 @@ def run_screener_for_sector(sector):
             res = calculate_engine_bank(ticker)
             if res:
                 results.append(res)
+            time.sleep(1.5) # Thêm delay tránh rate limit
                 
         df = pd.DataFrame(results)
         if df.empty:
@@ -524,6 +525,7 @@ def run_screener_for_sector(sector):
             res = calculate_engine(ticker)
             if res:
                 results.append(res)
+            time.sleep(1.5) # Thêm delay tránh rate limit
                 
         df = pd.DataFrame(results)
         if df.empty:
