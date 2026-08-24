@@ -29,10 +29,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         homeGrid.insertAdjacentHTML('beforeend', cardHtml);
-        
-        // Fetch data
-        fetchDataForSector(sector, safeId);
     });
+
+    // Fetch data sequentially to avoid API rate limits
+    async function loadAllSectors() {
+        for (const sector of targetSectors) {
+            const safeId = sector.replace(/\s+/g, '-').toLowerCase();
+            await fetchDataForSector(sector, safeId);
+        }
+    }
+    
+    loadAllSectors();
 
     async function fetchDataForSector(sector, elementId) {
         try {
