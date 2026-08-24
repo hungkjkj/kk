@@ -37,11 +37,25 @@ def get_sectors():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from fastapi import BackgroundTasks
+
 @app.get("/api/screener")
-def run_screener(sector: str):
+def run_screener(sector: str, background_tasks: BackgroundTasks):
     try:
-        results = quant_screener.run_screener_for_sector(sector)
-        return {"status": "success", "data": results}
+        import os, json
+        from datetime import datetime
+        safe_sector = "".join([c if c.isalnum() else "_" for c in sector])
+        today = datetime.now().strftime("%Y-%m-%d")
+        screener_cache_file = os.path.join("cache", f"screener_{safe_sector}_{today}.json")
+        
+        if os.path.exists(screener_cache_file):
+            with open(screener_cache_file, 'r', encoding='utf-8') as f:
+                results = json.load(f)
+                return {"status": "success", "data": results}
+        else:
+            # Run in background to prevent Render 100s timeout
+            background_tasks.add_task(quant_screener.run_screener_for_sector, sector)
+            return {"status": "syncing", "data": []}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -62,8 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await response.json();
 
             const tbody = document.getElementById(`tbody-${elementId}`);
-            tbody.innerHTML = ''; // clear skeletons
-
+            tbody.innerHTML = '';
             if (data.status === 'success' && data.data && data.data.length > 0) {
                 const isBank = sector.toLowerCase().includes('ngân hàng') || sector.toLowerCase().includes('bank');
                 
@@ -72,31 +71,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let headers = '';
                 if (isBank) {
                     headers = `
-                        <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
-                            <th class="py-3 px-4">#</th>
-                            <th class="py-3 px-4">Mã CP</th>
-                            <th class="py-3 px-4">Điểm</th>
-                            <th class="py-3 px-4">ROA</th>
-                            <th class="py-3 px-4">NIM</th>
-                            <th class="py-3 px-4">Value</th>
-                            <th class="py-3 px-4">EQ</th>
+                        <tr style="background: rgba(255,255,255,0.05);">
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">#</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">MÃ CP</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ĐIỂM</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROA</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">VALUE</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">EQ</th>
                         </tr>
                     `;
                 } else {
                     headers = `
-                        <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
-                            <th>#</th>
-                            <th>Mã CP</th>
-                            <th>Điểm</th>
-                            <th>ROIC(TTM)</th>
-                            <th>CFO/NI</th>
-                            <th>Value</th>
+                        <tr style="background: rgba(255,255,255,0.05);">
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">#</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">MÃ CP</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ĐIỂM</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROIC</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">CFO</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">VALUE</th>
                         </tr>
                     `;
                 }
                 thead.innerHTML = headers;
 
-                data.data.slice(0, 10).forEach((r, idx) => {
+                data.data.forEach((r, idx) => {
                     const t = r.ticker || r.Ticker || r.TICKER;
                     const score = r['Total Score'] || r.Total_Score || 0;
                     
@@ -108,13 +107,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td class="py-3 px-4 font-bold text-white">${idx + 1}</td>
-                                <td class="py-3 px-4 font-bold text-blue-400 cursor-pointer ticker-link hover:text-blue-300">${t}</td>
-                                <td class="py-3 px-4 font-bold text-yellow-500">${score.toFixed(1)}</td>
-                                <td class="py-3 px-4 text-gray-300">${roa}</td>
-                                <td class="py-3 px-4 text-gray-300">${nim}</td>
-                                <td class="py-3 px-4 text-emerald-400">${value}</td>
-                                <td class="py-3 px-4 text-gray-300">${eq}</td>
+                                <td>${idx + 1}</td>
+                                <td style="color: #38bdf8; font-weight: bold;"><a href="/compare?ticker=${t}" class="ticker-link" target="_blank">${t}</a></td>
+                                <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
+                                <td class="text-gray-300">${roa}</td>
+                                <td class="text-gray-300">${nim}</td>
+                                <td class="text-emerald-400">${value}</td>
+                                <td class="text-gray-300">${eq}</td>
                             </tr>
                         `;
                     } else {
@@ -125,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td>${idx + 1}</td>
-                                <td style="color: #38bdf8; font-weight: bold;">${t}</td>
+                                <td style="color: #38bdf8; font-weight: bold;"><a href="/compare?ticker=${t}" class="ticker-link" target="_blank">${t}</a></td>
                                 <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
                                 <td>${roic}</td>
                                 <td>${cfo}</td>
@@ -134,13 +133,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                         `;
                     }
                 });
+            } else if (data.status === 'syncing') {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: #f59e0b;"><i class="fas fa-spinner fa-spin"></i> Đang tự động cào dữ liệu từ Vnstock... Vui lòng F5 sau ít phút.</td></tr>`;
             } else {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8;">Không có dữ liệu hoặc lỗi.</td></tr>`;
             }
         } catch (error) {
             console.error(error);
             const tbody = document.getElementById(`tbody-${elementId}`);
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">Lỗi tải dữ liệu.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444;">Lỗi tải dữ liệu. Xin thử lại sau.</td></tr>`;
         }
     }
 });
