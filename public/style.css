@@ -80,6 +80,8 @@ header h1 {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
+    line-height: 1.4;
+    padding-top: 0.2em;
 }
 
 header p {
