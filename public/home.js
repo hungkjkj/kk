@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const homeGrid = document.getElementById('home-grid');
-    const targetSectors = ['Ngân hàng', 'Bán lẻ', 'Công nghệ thông tin'];
+    const targetSectors = ['Ngân hàng', 'Bán lẻ', 'Công nghệ thông tin', 'Xây dựng và Vật liệu'];
 
     // Initialize UI with skeletons
     targetSectors.forEach(sector => {

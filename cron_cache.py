@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import quant_screener
 
 def run_cache():
-    sectors = ["Ngân hàng", "Bán lẻ", "Công nghệ thông tin"]
+    sectors = ["Ngân hàng", "Bán lẻ", "Công nghệ thông tin", "Xây dựng và Vật liệu"]
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Bắt đầu tiến trình tạo cache tự động cho các ngành: {sectors}...")
     for s in sectors:
         print(f"  -> Đang cache dữ liệu ngành: {s}...")
