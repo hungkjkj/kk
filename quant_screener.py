@@ -691,11 +691,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             if roe_q == 0: roe_q = history[-1].get('roe', 0) if history else 0
             if roe_q and abs(roe_q) > 1 and abs(roe_q) < 100: roe_q = roe_q / 100
             
-            nim_q = get_latest_q_value(df_ratio_q, ["NIM bình quân 4 quý", "nim_trailling"])
-            if nim_q == 0:
-                nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
-                if nim_q != 0: nim_q = nim_q * 4 # Thường niên hóa (Annualize) nếu chỉ có data của 1 quý
-                
+            nim_q = get_latest_q_value(df_ratio_q, ["NIM", "lãi thuần", "thu nhập lãi thuần"])
             if nim_q == 0: nim_q = history[-1].get('nim', 0) if history else 0
             if nim_q and abs(nim_q) > 0.5 and abs(nim_q) < 100: nim_q = nim_q / 100
                 
