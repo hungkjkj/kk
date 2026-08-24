@@ -402,7 +402,7 @@ def with_lock(lock):
     return decorator
 
 @with_lock(_scrape_lock)
-def run_screener_for_sector(sector):
+def run_screener_for_sector(sector, force_update=False):
     import json
     import os
     from datetime import datetime
@@ -419,7 +419,7 @@ def run_screener_for_sector(sector):
     screener_cache_file = os.path.join(CACHE_DIR, f"screener_{safe_sector}_{today}.json")
     medians_cache_file = os.path.join(CACHE_DIR, f"medians_{safe_sector}_{today}.json")
     
-    if os.path.exists(screener_cache_file):
+    if not force_update and os.path.exists(screener_cache_file):
         try:
             with open(screener_cache_file, 'r', encoding='utf-8') as f:
                 return json.load(f)

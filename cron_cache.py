@@ -18,7 +18,7 @@ def run_cache():
     for s in sectors:
         print(f"  -> Đang cache dữ liệu ngành: {s}...")
         try:
-            quant_screener.run_screener_for_sector(s)
+            quant_screener.run_screener_for_sector(s, force_update=True)
             print(f"  -> Xong {s}. Nghỉ 60 giây để tránh Rate Limit...")
             time.sleep(60)
         except Exception as e:
