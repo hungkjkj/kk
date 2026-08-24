@@ -344,11 +344,13 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             cfo_quality_ttm = get_row_value(df_ratio, ["cash_to_income_2", "Dòng tiền từ HĐKD trên Lợi nhuận thuần"], latest_year_str)
         if cfo_quality_ttm and abs(cfo_quality_ttm) > 1 and abs(cfo_quality_ttm) < 1000: cfo_quality_ttm = cfo_quality_ttm / 100
 
-        # DE Current
+        # ED Current (Equity / Debt)
         de_current = get_latest_q_value(df_ratio_q, ["debt_to_equity", "Nợ vay trên Vốn chủ sở hữu"]) if df_ratio_q is not None else 0
         if de_current == 0:
             de_current = get_row_value(df_ratio, ["debt_to_equity", "Nợ vay trên Vốn chủ sở hữu"], latest_year_str)
         if de_current and abs(de_current) > 1 and abs(de_current) < 1000: de_current = de_current / 100
+        
+        ed_current = (1 / de_current) if de_current > 0 else 10.0
             
         # PB Current
         pb_current = get_latest_q_value(df_ratio_q, ["pb_ratio", "P/B"]) if df_ratio_q is not None else 0
@@ -371,7 +373,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
                 'ROIC_5Y': float(avg_roic_5y),
                 'Value_Ratio': float(value_ratio),
                 'CFO_Quality_TTM': float(cfo_quality_ttm),
-                'DE_Current': float(de_current),
+                'ED_Current': float(ed_current),
                 'ROIC_TTM': float(roic_ttm),
                 'PB_Current': float(pb_current),
                 'Current_Price': float(current_price)
@@ -380,7 +382,7 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
             'ROIC_5Y': float(avg_roic_5y),
             'Value_Ratio': float(value_ratio),
             'CFO_Quality_TTM': float(cfo_quality_ttm),
-            'DE_Current': float(de_current),
+            'ED_Current': float(ed_current),
             'ROIC_TTM': float(roic_ttm),
             'PB_Current': float(pb_current)
         }
@@ -505,13 +507,13 @@ def run_screener_for_sector(sector):
         median_roic_ttm = df['ROIC_TTM'].median()
         median_value = df['Value_Ratio'].median()
         median_cfo_ttm = df['CFO_Quality_TTM'].median()
-        median_de_curr = df['DE_Current'].median()
+        median_ed_curr = df['ED_Current'].median()
         
         if pd.isna(median_roic) or median_roic == 0: median_roic = 0.10
         if pd.isna(median_roic_ttm) or median_roic_ttm == 0: median_roic_ttm = 0.10
         if pd.isna(median_value) or median_value == 0: median_value = 10.0
         if pd.isna(median_cfo_ttm) or median_cfo_ttm == 0: median_cfo_ttm = 1.0
-        if pd.isna(median_de_curr) or median_de_curr == 0: median_de_curr = 1.0
+        if pd.isna(median_ed_curr) or median_ed_curr == 0: median_ed_curr = 1.0
         
         try:
             with open(medians_cache_file, 'w', encoding='utf-8') as f:
@@ -520,7 +522,7 @@ def run_screener_for_sector(sector):
                     'median_roic_ttm': float(median_roic_ttm),
                     'median_value': float(median_value),
                     'median_cfo_ttm': float(median_cfo_ttm),
-                    'median_de_curr': float(median_de_curr)
+                    'median_ed_curr': float(median_ed_curr)
                 }, f)
         except:
             pass
@@ -532,12 +534,12 @@ def run_screener_for_sector(sector):
         df['Score_CFO_TTM'] = (df['CFO_Quality_TTM'] / median_cfo_ttm) * 100
         df.loc[df['CFO_Quality_TTM'] < 0, 'Score_CFO_TTM'] = 0
         
-        df['Score_DE_Current'] = np.maximum(0, 2 - (df['DE_Current'] / median_de_curr)) * 100
+        df['Score_ED_Current'] = (df['ED_Current'] / median_ed_curr) * 100
         
         df['Total Score'] = (df['Score_ROIC'] * 0.15) + (df['Score_ROIC_TTM'] * 0.25) + \
                             (df['Score_Value'] * 0.20) + \
                             (df['Score_CFO_TTM'] * 0.25) + \
-                            (df['Score_DE_Current'] * 0.15)
+                            (df['Score_ED_Current'] * 0.15)
                             
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
