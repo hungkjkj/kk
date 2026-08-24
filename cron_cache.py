@@ -9,8 +9,10 @@ def run_cache():
         print(f"  -> Đang cache dữ liệu ngành: {s}...")
         try:
             quant_screener.run_screener_for_sector(s)
+            print(f"  -> Xong {s}. Nghỉ 30 giây để tránh Rate Limit...")
+            time.sleep(30)
         except Exception as e:
-            print(f"  -> Lỗi khi cache ngành {s}: {e}")
+            print(f"  -> Lỗi khi cache {s}: {e}")
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Tiến trình tạo cache hoàn tất.")
 
 def main():
