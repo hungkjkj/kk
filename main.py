@@ -45,6 +45,49 @@ def run_screener(sector: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+import json
+from pydantic import BaseModel
+from typing import Dict, List
+import subprocess
+
+@app.get("/api/config/sectors")
+def get_config_sectors():
+    try:
+        if os.path.exists("sectors_config.json"):
+            with open("sectors_config.json", "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SectorConfig(BaseModel):
+    config: Dict[str, List[str]]
+
+@app.post("/api/config/sectors")
+def update_config_sectors(payload: SectorConfig):
+    try:
+        cleaned_config = {}
+        for group, tickers in payload.config.items():
+            if len(tickers) > 20:
+                raise HTTPException(status_code=400, detail=f"Nhóm '{group}' vượt quá 20 mã cổ phiếu.")
+            cleaned_config[group.strip()] = [t.upper().strip() for t in tickers if t.strip()]
+            
+        with open("sectors_config.json", "w", encoding="utf-8") as f:
+            json.dump(cleaned_config, f, ensure_ascii=False, indent=4)
+        return {"status": "success"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/sync")
+def sync_data():
+    try:
+        subprocess.Popen(["python", "cron_cache.py"])
+        return {"status": "success", "message": "Đã kích hoạt đồng bộ nền."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/report")
 def get_report(ticker: str, peers: str = "", taxRate: float = 0.2):
     print(f"API CALL: /api/report?ticker={ticker}&peers={peers}&taxRate={taxRate}")
@@ -79,6 +122,10 @@ def read_root():
 @app.get("/compare")
 def read_compare():
     return FileResponse("public/compare.html")
+
+@app.get("/admin")
+def read_admin():
+    return FileResponse("public/admin.html")
 
 # Phục vụ các file tĩnh chỉ từ thư mục public (ẩn source code backend)
 app.mount("/", StaticFiles(directory="public"), name="static")

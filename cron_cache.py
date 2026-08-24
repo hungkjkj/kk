@@ -3,7 +3,17 @@ from datetime import datetime, timedelta
 import quant_screener
 
 def run_cache():
+    import json
+    import os
     sectors = ["Ngân hàng", "Bán lẻ", "Công nghệ thông tin", "Xây dựng và Vật liệu"]
+    try:
+        if os.path.exists("sectors_config.json"):
+            with open("sectors_config.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
+                if config:
+                    sectors = list(config.keys())
+    except:
+        pass
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Bắt đầu tiến trình tạo cache tự động cho các ngành: {sectors}...")
     for s in sectors:
         print(f"  -> Đang cache dữ liệu ngành: {s}...")

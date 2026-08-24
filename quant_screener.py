@@ -31,6 +31,19 @@ def get_available_sectors():
 
 def get_tickers_by_sector(sector):
     """ Lấy danh sách ticker thuộc một ngành cụ thể. """
+    import json
+    import os
+    try:
+        if os.path.exists("sectors_config.json"):
+            with open("sectors_config.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
+                for group, tickers in config.items():
+                    if group.lower() == sector.lower():
+                        return tickers
+    except Exception as e:
+        print("Lỗi đọc sectors_config.json:", e)
+
+    # Fallback to old defaults if config doesn't exist
     s = sector.lower()
     if s in ['ngân hàng', 'banks']:
         return ["VCB", "BID", "CTG", "TCB", "VPB", "MBB", "ACB", "STB", "HDB", "VIB", "TPB", "SHB", "LPB", "SSB", "MSB", "OCB", "EIB", "NAB"]

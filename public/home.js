@@ -1,10 +1,23 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const homeGrid = document.getElementById('home-grid');
-    const targetSectors = ['Ngân hàng', 'Bán lẻ', 'Công nghệ thông tin', 'Xây dựng và Vật liệu'];
+    let targetSectors = ['Ngân hàng', 'Bán lẻ', 'Công nghệ thông tin', 'Xây dựng và Vật liệu'];
+
+    try {
+        const res = await fetch('/api/config/sectors');
+        if (res.ok) {
+            const data = await res.json();
+            if (Object.keys(data).length > 0) {
+                targetSectors = Object.keys(data);
+            }
+        }
+    } catch (e) {
+        console.error("Lỗi lấy danh sách ngành:", e);
+    }
 
     // Initialize UI with skeletons
     targetSectors.forEach(sector => {
-        const safeId = sector.replace(/\s+/g, '-').toLowerCase();
+        // use base64 for safeId to avoid issues with special Vietnamese characters, removing padding
+        const safeId = 's_' + btoa(unescape(encodeURIComponent(sector))).replace(/[^a-zA-Z0-9]/g, '');
         const cardHtml = `
             <div class="sector-card glass" id="card-${safeId}">
                 <h2>${sector}</h2>
@@ -34,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch data sequentially to avoid API rate limits
     async function loadAllSectors() {
         for (const sector of targetSectors) {
-            const safeId = sector.replace(/\s+/g, '-').toLowerCase();
+            const safeId = 's_' + btoa(unescape(encodeURIComponent(sector))).replace(/[^a-zA-Z0-9]/g, '');
             await fetchDataForSector(sector, safeId);
         }
     }
