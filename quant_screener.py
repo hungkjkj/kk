@@ -337,7 +337,6 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         if pe == 0: pe = get_row_value(df_ratio, ["pe_ratio", "P/E", "Chỉ số giá thị trường trên thu nhập"], latest_year_str)
         
         ep_ratio = 1 / pe if pe > 0 else 0
-        value_ratio = (ep_ratio / avg_roic_5y) if avg_roic_5y > 0 else 0
         
         # CFO Quality
         cfo_quality_ttm = get_latest_q_value(df_ratio_q, ["cash_to_income_2", "Dòng tiền từ HĐKD trên Lợi nhuận thuần"]) if df_ratio_q is not None else 0
@@ -361,6 +360,8 @@ def calculate_engine(ticker, tax_rate_fallback=0.2):
         if roic_ttm == 0:
             roic_ttm = get_row_value(df_ratio, ["ROCE", "return_on_capital_employed_roce"], latest_year_str)
         if roic_ttm and abs(roic_ttm) < 200: roic_ttm = roic_ttm / 100
+
+        value_ratio = (ep_ratio / roic_ttm) if roic_ttm > 0 else 0
 
         if not pb_current or not avg_roic_5y or not ep_ratio:
             return None
