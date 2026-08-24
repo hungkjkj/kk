@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (isBank) {
                         const roa = r.ROA ? (r.ROA * 100).toFixed(1) + '%' : '-';
                         const nim = r.NIM ? (r.NIM * 100).toFixed(1) + '%' : '-';
-                        const value = r.Value_Ratio ? r.Value_Ratio.toFixed(1) : '-';
+                        const value = r.Value_Ratio ? (r.Value_Ratio * 100).toFixed(1) : '-';
                         const eq = r.Equity_Ratio ? (r.Equity_Ratio * 100).toFixed(1) + '%' : '-';
                         
                         tbody.innerHTML += `
