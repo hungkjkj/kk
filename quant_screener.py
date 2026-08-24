@@ -158,9 +158,17 @@ def get_latest_quarter_str(df, keywords):
 def get_top_market_cap(tickers, limit=10):
     """ Lấy danh sách Top 10 mã (ưu tiên vốn hóa lớn nhất) bằng cách đối chiếu với VN100. Tốc độ ánh sáng, không gọi API tài chính. """
     try:
-        vn100_df = Listing().symbols_by_group('VN100')
-        if vn100_df is not None and not vn100_df.empty:
-            vn100_symbols = vn100_df['symbol'].tolist()
+        vn100_data = Listing().symbols_by_group('VN100')
+        if vn100_data is not None and not vn100_data.empty:
+            if isinstance(vn100_data, pd.Series):
+                vn100_symbols = vn100_data.tolist()
+            elif 'symbol' in vn100_data.columns:
+                vn100_symbols = vn100_data['symbol'].tolist()
+            elif 'ticker' in vn100_data.columns:
+                vn100_symbols = vn100_data['ticker'].tolist()
+            else:
+                vn100_symbols = []
+                
             # Lọc các mã trong ngành có mặt trong rổ VN100 (những công ty đầu ngành)
             top_tickers = [t for t in tickers if t in vn100_symbols]
             
