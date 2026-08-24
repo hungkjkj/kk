@@ -56,19 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Add more headers if we have actual data
                 const thead = document.querySelector(`#card-${elementId} thead`);
+                let headers = '';
                 if (isBank) {
-                    thead.innerHTML = `
+                    headers = `
                         <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
-                            <th>#</th>
-                            <th>Mã CP</th>
-                            <th>Điểm</th>
-                            <th>ROA</th>
-                            <th>NIM</th>
-                            <th>Value</th>
+                            <th class="py-3 px-4">#</th>
+                            <th class="py-3 px-4">Mã CP</th>
+                            <th class="py-3 px-4">Điểm</th>
+                            <th class="py-3 px-4">ROA</th>
+                            <th class="py-3 px-4">NIM</th>
+                            <th class="py-3 px-4">Value</th>
+                            <th class="py-3 px-4">EQ</th>
                         </tr>
                     `;
                 } else {
-                    thead.innerHTML = `
+                    headers = `
                         <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
                             <th>#</th>
                             <th>Mã CP</th>
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </tr>
                     `;
                 }
+                thead.innerHTML = headers;
 
                 data.data.slice(0, 10).forEach((r, idx) => {
                     const t = r.ticker || r.Ticker || r.TICKER;
@@ -87,16 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (isBank) {
                         const roa = r.ROA ? (r.ROA * 100).toFixed(1) + '%' : '-';
                         const nim = r.NIM ? (r.NIM * 100).toFixed(1) + '%' : '-';
-                        const val = r.Value_Ratio ? (r.Value_Ratio * 100).toFixed(1) : '-';
+                        const value = r.Value_Ratio ? r.Value_Ratio.toFixed(1) : '-';
+                        const eq = r.Equity_Ratio ? (r.Equity_Ratio * 100).toFixed(1) + '%' : '-';
                         
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td>${idx + 1}</td>
-                                <td style="color: #38bdf8; font-weight: bold;">${t}</td>
-                                <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
-                                <td>${roa}</td>
-                                <td>${nim}</td>
-                                <td style="color: #10b981;">${val}</td>
+                                <td class="py-3 px-4 font-bold text-white">${idx + 1}</td>
+                                <td class="py-3 px-4 font-bold text-blue-400 cursor-pointer ticker-link hover:text-blue-300">${t}</td>
+                                <td class="py-3 px-4 font-bold text-yellow-500">${score.toFixed(1)}</td>
+                                <td class="py-3 px-4 text-gray-300">${roa}</td>
+                                <td class="py-3 px-4 text-gray-300">${nim}</td>
+                                <td class="py-3 px-4 text-emerald-400">${value}</td>
+                                <td class="py-3 px-4 text-gray-300">${eq}</td>
                             </tr>
                         `;
                     } else {

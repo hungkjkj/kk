@@ -257,6 +257,7 @@ def calculate_engine_bank(ticker):
             return None
             
         value_ratio = roe / pb if pb > 0 else 0
+        equity_ratio = (roa / roe) if roe > 0 else 0
 
         return {
             'Ticker': ticker,
@@ -265,6 +266,7 @@ def calculate_engine_bank(ticker):
             'NIM': float(nim),
             'PB': float(pb),
             'Value_Ratio': float(value_ratio),
+            'Equity_Ratio': float(equity_ratio),
             'Current_Price': float(current_price)
         }
     except Exception as e:
@@ -491,18 +493,21 @@ def run_screener_for_sector(sector):
         median_roa = df['ROA'].median()
         median_nim = df['NIM'].median()
         median_value = df['Value_Ratio'].median()
+        median_eq = df['Equity_Ratio'].median()
         
         # Fallback nếu trung vị lỗi hoặc bằng 0
         if pd.isna(median_roa) or median_roa == 0: median_roa = 0.02
         if pd.isna(median_nim) or median_nim == 0: median_nim = 0.035
         if pd.isna(median_value) or median_value == 0: median_value = 10.0
+        if pd.isna(median_eq) or median_eq == 0: median_eq = 0.10
             
         try:
             with open(medians_cache_file, 'w', encoding='utf-8') as f:
                 json.dump({
                     'median_roa': float(median_roa),
                     'median_nim': float(median_nim),
-                    'median_value': float(median_value)
+                    'median_value': float(median_value),
+                    'median_eq': float(median_eq)
                 }, f)
         except:
             pass
@@ -510,8 +515,9 @@ def run_screener_for_sector(sector):
         df['Score_ROA'] = (df['ROA'] / median_roa) * 100
         df['Score_NIM'] = (df['NIM'] / median_nim) * 100
         df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
+        df['Score_EQ'] = (df['Equity_Ratio'] / median_eq) * 100
         
-        df['Total Score'] = (df['Score_ROA'] * 0.50) + (df['Score_NIM'] * 0.15) + (df['Score_Value'] * 0.35)
+        df['Total Score'] = (df['Score_ROA'] * 0.30) + (df['Score_Value'] * 0.30) + (df['Score_NIM'] * 0.20) + (df['Score_EQ'] * 0.20)
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
         
@@ -699,6 +705,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
             if pb_q == 0: pb_q = history[-1].get('pb', 0) if history else 0
             
             value_ratio_q = (roe_q / pb_q) if pb_q and pb_q > 0 else 0
+            equity_ratio_q = (roa_q / roe_q) if roe_q and roe_q > 0 else 0
 
             return {
                 'ticker': ticker,
@@ -710,6 +717,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                     'NIM_Current': float(nim_q) if nim_q else 0,
                     'PB_Current': float(pb_q) if pb_q else 0,
                     'Value_Ratio_Current': float(value_ratio_q) if value_ratio_q else 0,
+                    'Equity_Ratio_Current': float(equity_ratio_q) if equity_ratio_q else 0,
                     'Current_Price': float(current_price) if current_price else 0,
                     'Latest_Quarter': latest_q_str,
                     'Latest_Year': latest_y_str
@@ -976,6 +984,7 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
                 'NIM_Current': summary.get('NIM_Current', 0),
                 'PB_Current': summary.get('PB_Current', 0),
                 'Value_Ratio_Current': summary.get('Value_Ratio_Current', 0),
+                'Equity_Ratio_Current': summary.get('Equity_Ratio_Current', 0),
                 'Current_Price': summary.get('Current_Price', 0)
             })
         else:
@@ -1001,11 +1010,13 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             m_roa = medians.get('median_roa', 0.02)
             m_nim = medians.get('median_nim', 0.035)
             m_value = medians.get('median_value', 10.0)
+            m_eq = medians.get('median_eq', 0.1)
             
             df_rank['Score_ROA'] = (df_rank['ROA_Current'] / m_roa) * 100
             df_rank['Score_NIM'] = (df_rank['NIM_Current'] / m_nim) * 100
             df_rank['Score_Value'] = (df_rank['Value_Ratio_Current'] / m_value) * 100
-            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.50) + (df_rank['Score_NIM'] * 0.15) + (df_rank['Score_Value'] * 0.35)
+            df_rank['Score_EQ'] = (df_rank['Equity_Ratio_Current'] / m_eq) * 100
+            df_rank['Total_Score'] = (df_rank['Score_ROA'] * 0.30) + (df_rank['Score_Value'] * 0.30) + (df_rank['Score_NIM'] * 0.20) + (df_rank['Score_EQ'] * 0.20)
         else:
             m_roic = medians.get('median_roic', 0.10)
             m_roic_ttm = medians.get('median_roic_ttm', 0.10)

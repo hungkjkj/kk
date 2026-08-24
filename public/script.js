@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM (%)</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Value Ratio</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">EQ (%)</th>
                     </tr>
                 `;
             } else {
@@ -185,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${(r.NIM_Current * 100).toFixed(1)}%</td>
                             <td style="padding: 12px; ${pbStyle}">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
                             <td style="padding: 12px; color: #10b981; font-weight: bold;">${(r.Value_Ratio_Current * 100).toFixed(1)}</td>
+                            <td style="padding: 12px;">${(r.Equity_Ratio_Current * 100).toFixed(1)}%</td>
                         </tr>
                     `;
                 } else {
@@ -242,8 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}${tQ}</p>
                 </div>
                 <div class="card" title="Tỷ số Giá trị = ROE / P/B. Càng cao càng hấp dẫn.">
-                    <h3>Value Ratio ⓘ</h3>
+                    <h3>Value Ratio ℹ️</h3>
                     <p style="color: #10b981; font-weight: bold;">${formatNum(summary.Value_Ratio_Current * 100)}</p>
+                </div>
+                <div class="card" title="Độ an toàn vốn (Equity Ratio) = ROA / ROE. Mức đòn bẩy tài chính.">
+                    <h3>EQ (%) ℹ️</h3>
+                    <p>${formatPct(summary.Equity_Ratio_Current)}${tQ}</p>
                 </div>
             `;
         } else {
