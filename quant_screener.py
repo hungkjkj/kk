@@ -503,19 +503,13 @@ def run_screener_for_sector(sector):
         median_roic = df['ROIC_5Y'].median()
         median_roic_ttm = df['ROIC_TTM'].median()
         median_value = df['Value_Ratio'].median()
-        median_bp = df['BP_5Y'].median() if 'BP_5Y' in df.columns else 10.0
-        median_cfo = df['CFO_Quality'].median()
         median_cfo_ttm = df['CFO_Quality_TTM'].median()
-        median_de = df['DE_5Y'].median()
         median_de_curr = df['DE_Current'].median()
         
         if pd.isna(median_roic) or median_roic == 0: median_roic = 0.10
         if pd.isna(median_roic_ttm) or median_roic_ttm == 0: median_roic_ttm = 0.10
         if pd.isna(median_value) or median_value == 0: median_value = 10.0
-        if pd.isna(median_bp) or median_bp == 0: median_bp = 10.0
-        if pd.isna(median_cfo) or median_cfo == 0: median_cfo = 1.0
         if pd.isna(median_cfo_ttm) or median_cfo_ttm == 0: median_cfo_ttm = 1.0
-        if pd.isna(median_de) or median_de == 0: median_de = 1.0
         if pd.isna(median_de_curr) or median_de_curr == 0: median_de_curr = 1.0
         
         try:
@@ -524,10 +518,7 @@ def run_screener_for_sector(sector):
                     'median_roic': float(median_roic),
                     'median_roic_ttm': float(median_roic_ttm),
                     'median_value': float(median_value),
-                    'median_bp': float(median_bp),
-                    'median_cfo': float(median_cfo),
                     'median_cfo_ttm': float(median_cfo_ttm),
-                    'median_de': float(median_de),
                     'median_de_curr': float(median_de_curr)
                 }, f)
         except:
@@ -537,18 +528,15 @@ def run_screener_for_sector(sector):
         df['Score_ROIC_TTM'] = (df['ROIC_TTM'] / median_roic_ttm) * 100
         df['Score_Value'] = (df['Value_Ratio'] / median_value) * 100
         
-        df['Score_CFO'] = (df['CFO_Quality'] / median_cfo) * 100
-        df.loc[df['CFO_Quality'] < 0, 'Score_CFO'] = 0
         df['Score_CFO_TTM'] = (df['CFO_Quality_TTM'] / median_cfo_ttm) * 100
         df.loc[df['CFO_Quality_TTM'] < 0, 'Score_CFO_TTM'] = 0
         
-        df['Score_DE'] = np.maximum(0, 2 - (df['DE_5Y'] / median_de)) * 100
         df['Score_DE_Current'] = np.maximum(0, 2 - (df['DE_Current'] / median_de_curr)) * 100
         
         df['Total Score'] = (df['Score_ROIC'] * 0.15) + (df['Score_ROIC_TTM'] * 0.25) + \
                             (df['Score_Value'] * 0.20) + \
-                            (df['Score_CFO'] * 0.10) + (df['Score_CFO_TTM'] * 0.15) + \
-                            (df['Score_DE'] * 0.05) + (df['Score_DE_Current'] * 0.10)
+                            (df['Score_CFO_TTM'] * 0.25) + \
+                            (df['Score_DE_Current'] * 0.15)
                             
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
