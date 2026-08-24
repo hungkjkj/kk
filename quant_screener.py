@@ -297,168 +297,94 @@ def calculate_engine_bank(ticker):
 
 def calculate_engine(ticker, tax_rate_fallback=0.2):
     try:
-        f = Finance(symbol=ticker, source='VCI')
+        f = Finance(symbol=ticker, source='KBS')
         
-        df_cf = f.cash_flow(period='year')
-        df_is = f.income_statement(period='year')
-        df_bs = f.balance_sheet(period='year')
-        
-        if df_cf is None or df_is is None or df_bs is None:
+        df_ratio = f.ratio(period='year')
+        if df_ratio is None or df_ratio.empty:
             return None
             
-        years_cols = [c for c in df_is.columns if str(c).startswith('20')]
+        try:
+            df_ratio_q = f.ratio(period='quarter')
+        except:
+            df_ratio_q = None
+
+        years_cols = [c for c in df_ratio.columns if '-' in str(c) or 'Năm' in str(c) or str(c).startswith('20')]
         years_cols = sorted(years_cols, reverse=True)
         if len(years_cols) < 3:
             return None
             
         import re
         latest_year_str = years_cols[0]
-        match = re.search(r'\d{4}', str(latest_year_str))
-        if not match:
-            return None
-            
-        latest_year = int(match.group(0))
-        current_year = pd.Timestamp.now().year
-        
-        # Chống lỗi lấy data quá cũ (ví dụ data từ 2018)
-        if latest_year < current_year - 2:
-            return None
-            
-        roic_list = []
-        de_list = []
-        total_cfo_5y = 0
-        total_ni_5y = 0
-        
-        net_income_current = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=str(latest_year))
         
         try:
             overview_df = Company(symbol=ticker, source='VCI').overview()
-            market_cap_overview = overview_df.iloc[0].get('market_cap', 0) if not overview_df.empty else 0
             current_price = overview_df.iloc[0].get('current_price', 0) if not overview_df.empty else 0
         except:
-            market_cap_overview = 0
             current_price = 0
-            
-        market_cap = market_cap_overview * 1e9 if market_cap_overview > 0 and market_cap_overview < 1000000 else market_cap_overview
 
-        num_years = min(len(years_cols), 5)
-        for i in range(num_years):
-            target_year_str = str(latest_year - i)
-            ebt = get_row_value(df_is, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"], year_str=target_year_str)
-            tax = get_row_value(df_is, ["thuế thu nhập doanh nghiệp", "Income tax expense"], year_str=target_year_str)
-            ni = get_row_value(df_is, ["Lợi nhuận sau thuế", "Net income"], year_str=target_year_str)
-            ebit = get_row_value(df_is, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"], year_str=target_year_str)
-            if ebit == 0:
-                ebit = ebt 
+        # Calculate ROIC 5Y from ROCE
+        roic_list = []
+        for i in range(min(len(years_cols), 5)):
+            y = years_cols[i]
+            roce = get_row_value(df_ratio, ["ROCE", "return_on_capital_employed_roce", "Tỷ suất sinh lợi trên vốn dài hạn bình quân"], year_str=str(y))
+            if roce and abs(roce) < 200: roce = roce / 100
+            if roce: roic_list.append(roce)
             
-            if ebt > 0:
-                tax_rate = tax / ebt
-                tax_rate = max(0.0, min(0.22, tax_rate))
-            else:
-                tax_rate = tax_rate_fallback
-                
-            equity = get_row_value(df_bs, ["Vốn chủ sở hữu", "Equity"], year_str=target_year_str)
-            debt = get_row_value(df_bs, ["Nợ phải trả", "Liabilities", "Tổng nợ"], year_str=target_year_str)
-            cash = get_row_value(df_bs, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"], year_str=target_year_str)
-            
-            cfo = get_row_value(df_cf, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"], year_str=target_year_str)
-            
-            invested_capital = equity + debt - cash
-            if invested_capital > 0:
-                roic = (ebit * (1 - tax_rate)) / invested_capital
-            else:
-                roic = 0
-            roic_list.append(roic)
-            
-            if equity > 0:
-                de_list.append(debt / equity)
-            else:
-                de_list.append(0)
-                
-            total_cfo_5y += cfo
-            total_ni_5y += ni
-            
-        avg_roic_5y = np.mean(roic_list)
-        avg_de_5y = np.mean(de_list)
+        avg_roic_5y = np.mean(roic_list) if roic_list else 0
         
-        cfo_quality = total_cfo_5y / total_ni_5y if total_ni_5y != 0 else 0
+        # Current Value Ratio
+        pe = get_latest_q_value(df_ratio_q, ["pe_ratio", "P/E", "Chỉ số giá thị trường trên thu nhập"]) if df_ratio_q is not None else 0
+        if pe == 0: pe = get_row_value(df_ratio, ["pe_ratio", "P/E", "Chỉ số giá thị trường trên thu nhập"], latest_year_str)
         
-        ep_ratio = net_income_current / market_cap if market_cap > 0 else 0
-        value_ratio = (ep_ratio / avg_roic_5y) if avg_roic_5y != 0 else 0
+        ep_ratio = 1 / pe if pe > 0 else 0
+        value_ratio = (ep_ratio / avg_roic_5y) if avg_roic_5y > 0 else 0
         
-        try:
-            df_cf_q = f.cash_flow(period='quarter')
-            df_is_q = f.income_statement(period='quarter')
-            df_bs_q = f.balance_sheet(period='quarter')
-        except:
-            df_cf_q, df_is_q, df_bs_q = None, None, None
+        # CFO Quality
+        cfo_quality_ttm = get_latest_q_value(df_ratio_q, ["cash_to_income_2", "Dòng tiền từ HĐKD trên Lợi nhuận thuần"]) if df_ratio_q is not None else 0
+        if cfo_quality_ttm == 0:
+            cfo_quality_ttm = get_row_value(df_ratio, ["cash_to_income_2", "Dòng tiền từ HĐKD trên Lợi nhuận thuần"], latest_year_str)
+        if cfo_quality_ttm and abs(cfo_quality_ttm) > 1 and abs(cfo_quality_ttm) < 1000: cfo_quality_ttm = cfo_quality_ttm / 100
 
-        roic_ttm = 0
-        cfo_quality_ttm = 0
-        de_current = 0
-        
-        if df_is_q is not None and not df_is_q.empty and df_bs_q is not None and not df_bs_q.empty:
-            ebt_ttm = get_ttm_value(df_is_q, ["Tổng lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế", "Profit before tax"])
-            tax_ttm = get_ttm_value(df_is_q, ["thuế thu nhập doanh nghiệp", "Income tax expense"])
-            ni_ttm = get_ttm_value(df_is_q, ["Lợi nhuận sau thuế", "Net income"])
-            ebit_ttm = get_ttm_value(df_is_q, ["Lợi nhuận thuần từ hoạt động kinh doanh", "Operating profit"])
-            if ebit_ttm == 0: ebit_ttm = ebt_ttm
+        # DE Current
+        de_current = get_latest_q_value(df_ratio_q, ["debt_to_equity", "Nợ vay trên Vốn chủ sở hữu"]) if df_ratio_q is not None else 0
+        if de_current == 0:
+            de_current = get_row_value(df_ratio, ["debt_to_equity", "Nợ vay trên Vốn chủ sở hữu"], latest_year_str)
+        if de_current and abs(de_current) > 1 and abs(de_current) < 1000: de_current = de_current / 100
             
-            cfo_ttm = get_ttm_value(df_cf_q, ["Lưu chuyển tiền thuần từ hoạt động kinh doanh", "Net cash flows from operating activities"]) if df_cf_q is not None else 0
+        # PB Current
+        pb_current = get_latest_q_value(df_ratio_q, ["pb_ratio", "P/B"]) if df_ratio_q is not None else 0
+        if pb_current == 0:
+            pb_current = get_row_value(df_ratio, ["pb_ratio", "P/B"], latest_year_str)
             
-            tax_rate_ttm = tax_ttm / ebt_ttm if ebt_ttm > 0 else tax_rate_fallback
-            tax_rate_ttm = max(0.0, min(0.22, tax_rate_ttm))
-            
-            equity_q = get_latest_q_value(df_bs_q, ["Vốn chủ sở hữu", "Equity"])
-            debt_q = get_latest_q_value(df_bs_q, ["Nợ phải trả", "Liabilities", "Tổng nợ"])
-            cash_q = get_latest_q_value(df_bs_q, ["Tiền và các khoản tương đương tiền", "Cash and cash equivalents"])
-            
-            invested_capital_q = equity_q + debt_q - cash_q
-            if invested_capital_q > 0:
-                roic_ttm = (ebit_ttm * (1 - tax_rate_ttm)) / invested_capital_q
-                
-            if equity_q > 0:
-                de_current = debt_q / equity_q
-                
-            if ni_ttm != 0:
-                cfo_quality_ttm = cfo_ttm / ni_ttm
+        # ROIC TTM
+        roic_ttm = get_latest_q_value(df_ratio_q, ["ROCE", "return_on_capital_employed_roce"]) if df_ratio_q is not None else 0
+        if roic_ttm == 0:
+            roic_ttm = get_row_value(df_ratio, ["ROCE", "return_on_capital_employed_roce"], latest_year_str)
+        if roic_ttm and abs(roic_ttm) < 200: roic_ttm = roic_ttm / 100
 
-        equity_q_val = get_latest_q_value(df_bs_q, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"]) if df_bs_q is not None else 0
-        if equity_q_val == 0 and df_bs is not None:
-            equity_q_val = get_row_value(df_bs, ["của công ty mẹ", "Vốn chủ sở hữu", "Equity"], str(latest_year))
-
-        if market_cap_overview > 0 and equity_q_val > 0:
-            mc = market_cap_overview * 1e9 if market_cap_overview < 1000000 else market_cap_overview
-            pb_q = mc / equity_q_val
-        else:
-            return None
-
-        if not pb_q or not avg_roic_5y or not ep_ratio:
+        if not pb_current or not avg_roic_5y or not ep_ratio:
             return None
 
         return {
             'summary': {
-                'ROIC_5Y': avg_roic_5y,
-                'Value_Ratio': value_ratio,
-                'CFO_Quality_TTM': cfo_quality_ttm,
-                'DE_Current': de_current,
-                'ROIC_TTM': roic_ttm,
-                'PB_Current': float(pb_q),
+                'ROIC_5Y': float(avg_roic_5y),
+                'Value_Ratio': float(value_ratio),
+                'CFO_Quality_TTM': float(cfo_quality_ttm),
+                'DE_Current': float(de_current),
+                'ROIC_TTM': float(roic_ttm),
+                'PB_Current': float(pb_current),
                 'Current_Price': float(current_price)
             },
             'Ticker': ticker,
-            'ROIC_5Y': avg_roic_5y,
-            'Value_Ratio': value_ratio,
-            'CFO_Quality': cfo_quality,
-            'DE_5Y': avg_de_5y,
-            'ROIC_TTM': roic_ttm,
-            'CFO_Quality_TTM': cfo_quality_ttm,
-            'DE_Current': de_current,
-            'PB_Current': float(pb_q),
-            'Current_Price': float(current_price)
+            'ROIC_5Y': float(avg_roic_5y),
+            'Value_Ratio': float(value_ratio),
+            'CFO_Quality_TTM': float(cfo_quality_ttm),
+            'DE_Current': float(de_current),
+            'ROIC_TTM': float(roic_ttm),
+            'PB_Current': float(pb_current)
         }
-        
-    except Exception:
+    except Exception as e:
+        print(f"Error in engine {ticker}: {e}")
         return None
 
 import threading
