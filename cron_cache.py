@@ -5,7 +5,7 @@ import quant_screener
 def run_cache():
     import json
     import os
-    sectors = ["Ngân hàng", "Bán lẻ", "Công nghệ thông tin", "Xây dựng và Vật liệu"]
+    sectors = ["Ngân hàng", "Chứng khoán", "Bán lẻ", "Công nghệ thông tin", "Xây dựng và Vật liệu"]
     try:
         if os.path.exists("sectors_config.json"):
             with open("sectors_config.json", "r", encoding="utf-8") as f:

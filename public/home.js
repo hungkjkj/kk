@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tbody.innerHTML = '';
             if (data.status === 'success' && data.data && data.data.length > 0) {
                 const isBank = sector.toLowerCase().includes('ngân hàng') || sector.toLowerCase().includes('bank');
+                const isSecurities = sector.toLowerCase().includes('chứng khoán') || sector.toLowerCase().includes('securities') || sector.toLowerCase().includes('dịch vụ tài chính');
                 
                 // Add more headers if we have actual data
                 const thead = document.querySelector(`#card-${elementId} thead`);
@@ -79,6 +80,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">NIM</th>
                             <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">VALUE</th>
                             <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">EQ</th>
+                        </tr>
+                    `;
+                } else if (isSecurities) {
+                    headers = `
+                        <tr style="background: rgba(255,255,255,0.05);">
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">#</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">MÃ CP</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ĐIỂM</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/E</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROE TTM</th>
+                            <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">VỐN CHỦ</th>
                         </tr>
                     `;
                 } else {
@@ -114,6 +127,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <td class="text-gray-300">${nim}</td>
                                 <td class="text-emerald-400">${value}</td>
                                 <td class="text-gray-300">${eq}</td>
+                            </tr>
+                        `;
+                    } else if (isSecurities) {
+                        const pb = r.PB ? r.PB.toFixed(2) : '-';
+                        const pe = r.PE ? r.PE.toFixed(1) : '-';
+                        const roe_ttm = r.ROE_TTM ? (r.ROE_TTM * 100).toFixed(1) + '%' : '-';
+                        const eq = r.Equity_Ratio ? (r.Equity_Ratio).toFixed(1) + 'x' : '-';
+                        
+                        tbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td>${idx + 1}</td>
+                                <td style="color: #38bdf8; font-weight: bold;"><a href="/compare?ticker=${t}" class="ticker-link" target="_blank">${t}</a></td>
+                                <td style="color: #fbbf24; font-weight: bold;">${score.toFixed(1)}</td>
+                                <td style="color: #10b981;">${pb}</td>
+                                <td class="text-gray-300">${pe}</td>
+                                <td class="text-gray-300">${roe_ttm}</td>
+                                <td class="text-emerald-400">${eq}</td>
                             </tr>
                         `;
                     } else {

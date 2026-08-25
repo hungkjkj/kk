@@ -16,7 +16,7 @@ def get_available_sectors():
         df = Listing().symbols_by_industries()
         if df is not None and not df.empty and 'industry_name' in df.columns:
             sectors = df['industry_name'].dropna().unique().tolist()
-            blacklist = ["chứng khoán", "bất động sản", "dịch vụ tài chính"]
+            blacklist = ["bất động sản"]
             filtered_sectors = []
             for s in sectors:
                 if not s.strip(): continue
@@ -53,6 +53,8 @@ def get_tickers_by_sector(sector):
         return ["FPT", "CMG", "ELC", "ITD"]
     elif s == 'xây dựng và vật liệu':
         return ["HPG", "HSG", "NKG", "VCG", "CTD", "HBC", "HT1", "BCC"]
+    elif s in ['chứng khoán', 'securities', 'dịch vụ tài chính']:
+        return ["SSI", "VND", "VCI", "HCM", "SHS", "MBS", "FTS", "BSI", "CTS", "VIX"]
 
     try:
         df = Listing().symbols_by_industries()
@@ -222,6 +224,75 @@ def get_top_market_cap(tickers, limit=20):
         print("Lỗi khi đối chiếu VN100:", e)
         
     return tickers[:limit]
+
+def calculate_engine_securities(ticker):
+    try:
+        f = Finance(symbol=ticker, source='KBS')
+        df_ratio = f.ratio(period='year')
+        
+        try:
+            df_ratio_q = f.ratio(period='quarter')
+        except:
+            df_ratio_q = None
+        
+        if df_ratio is None or df_ratio.empty:
+            return None
+            
+        years_cols = [c for c in df_ratio.columns if str(c).startswith('20') and '-Năm' in str(c)]
+        if not years_cols:
+            years_cols = [c for c in df_ratio.columns if str(c).startswith('20')]
+            if not years_cols:
+                return None
+        
+        years_cols = sorted(years_cols, reverse=True)
+        latest_year_str = years_cols[0]
+        
+        pb = get_latest_q_value(df_ratio_q, ["P/B", "giá trị sổ sách (P/B)"])
+        if pb == 0: pb = get_row_value(df_ratio, ["P/B", "giá trị sổ sách (P/B)"], latest_year_str)
+        
+        pe = get_latest_q_value(df_ratio_q, ["P/E", "thu nhập trên cổ phần (P/E)"])
+        if pe == 0: pe = get_row_value(df_ratio, ["P/E", "thu nhập trên cổ phần (P/E)"], latest_year_str)
+        
+        roe_ttm = get_latest_q_value(df_ratio_q, ["ROE bình quân 4 quý", "roe_trailling", "ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"])
+        if roe_ttm == 0: roe_ttm = get_row_value(df_ratio, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"], latest_year_str)
+        if roe_ttm and abs(roe_ttm) > 1 and abs(roe_ttm) < 100: roe_ttm = roe_ttm / 100
+        
+        avg_roe_5y = 0
+        valid_roe_count = 0
+        for y_col in years_cols[:5]:
+            val = get_row_value(df_ratio, ["ROEA", "ROE", "lợi nhuận trên vốn chủ sở hữu"], y_col)
+            if val != 0:
+                if abs(val) > 1 and abs(val) < 100: val = val / 100
+                avg_roe_5y += val
+                valid_roe_count += 1
+        avg_roe_5y = avg_roe_5y / valid_roe_count if valid_roe_count > 0 else roe_ttm
+
+        roa = get_latest_q_value(df_ratio_q, ["ROA bình quân 4 quý", "roa_trailling", "ROAA", "ROA", "sinh lợi trên tổng tài sản"])
+        if roa == 0: roa = get_row_value(df_ratio, ["ROAA", "ROA", "sinh lợi trên tổng tài sản"], latest_year_str)
+        if roa and abs(roa) < 100: roa = roa / 100
+
+        equity_ratio = (roa / roe_ttm) if roe_ttm > 0 else 0
+        
+        try:
+            overview_df = Company(symbol=ticker, source='VCI').overview()
+            current_price = overview_df.iloc[0].get('current_price', 0) if not overview_df.empty else 0
+        except:
+            current_price = 0
+            
+        if not pb or not pe or not roe_ttm:
+            return None
+            
+        return {
+            'Ticker': ticker,
+            'PB': float(pb),
+            'PE': float(pe),
+            'ROE_TTM': float(roe_ttm),
+            'ROE_5Y': float(avg_roe_5y),
+            'Equity_Ratio': float(equity_ratio),
+            'Current_Price': float(current_price)
+        }
+    except Exception as e:
+        return None
 
 def calculate_engine_bank(ticker):
     try:
@@ -442,7 +513,64 @@ def run_screener_for_sector(sector, force_update=False):
     
     results = []
     
-    if sector.lower() in ['ngân hàng', 'banks']:
+    if sector.lower() in ['chứng khoán', 'securities', 'dịch vụ tài chính']:
+        for ticker in top_tickers:
+            res = calculate_engine_securities(ticker)
+            if res:
+                results.append(res)
+            time.sleep(1.5)
+            
+        df = pd.DataFrame(results)
+        if df.empty:
+            return []
+            
+        median_pb = df['PB'].median()
+        median_pe = df['PE'].median()
+        median_roe_ttm = df['ROE_TTM'].median()
+        median_roe_5y = df['ROE_5Y'].median()
+        median_eq = df['Equity_Ratio'].median()
+        
+        if pd.isna(median_pb) or median_pb == 0: median_pb = 1.5
+        if pd.isna(median_pe) or median_pe == 0: median_pe = 15.0
+        if pd.isna(median_roe_ttm) or median_roe_ttm == 0: median_roe_ttm = 0.10
+        if pd.isna(median_roe_5y) or median_roe_5y == 0: median_roe_5y = 0.10
+        if pd.isna(median_eq) or median_eq == 0: median_eq = 0.10
+            
+        try:
+            with open(medians_cache_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'median_pb': float(median_pb),
+                    'median_pe': float(median_pe),
+                    'median_roe_ttm': float(median_roe_ttm),
+                    'median_roe_5y': float(median_roe_5y),
+                    'median_eq': float(median_eq)
+                }, f)
+        except:
+            pass
+
+        df['Score_PB'] = (median_pb / df['PB'].replace(0, np.nan)) * 100
+        df['Score_PE'] = (median_pe / df['PE'].replace(0, np.nan)) * 100
+        df['Score_ROE_TTM'] = (df['ROE_TTM'] / median_roe_ttm) * 100
+        df['Score_ROE_5Y'] = (df['ROE_5Y'] / median_roe_5y) * 100
+        df['Score_EQ'] = (df['Equity_Ratio'] / median_eq) * 100
+        
+        df['Total Score'] = (df['Score_PB'] * 0.30) + \
+                            (df['Score_ROE_TTM'] * 0.20) + \
+                            (df['Score_ROE_5Y'] * 0.15) + \
+                            (df['Score_PE'] * 0.20) + \
+                            (df['Score_EQ'] * 0.15)
+                            
+        df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
+        df = df.fillna(0)
+        
+        final_results = df.to_dict('records')
+        try:
+            df.to_json(screener_cache_file, orient='records', force_ascii=False)
+        except Exception as e:
+            print("CACHE ERROR:", e)
+        return final_results
+        
+    elif sector.lower() in ['ngân hàng', 'banks']:
         for ticker in top_tickers:
             res = calculate_engine_bank(ticker)
             if res:
