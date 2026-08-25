@@ -538,8 +538,8 @@ def run_screener_for_sector(sector, force_update=False):
         
         df['Total Score'] = (df['Score_ROIC'] * 0.15) + (df['Score_ROIC_TTM'] * 0.25) + \
                             (df['Score_Value'] * 0.20) + \
-                            (df['Score_CFO_TTM'] * 0.25) + \
-                            (df['Score_ED_Current'] * 0.15)
+                            (df['Score_CFO_TTM'] * 0.20) + \
+                            (df['Score_ED_Current'] * 0.20)
                             
         df = df.sort_values(by='Total Score', ascending=False).reset_index(drop=True)
         df = df.fillna(0)
