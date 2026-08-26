@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const isBank = (sector && (sector.toLowerCase() === 'ngân hàng' || sector.toLowerCase() === 'banks'));
-        const isSecurities = (sector && (sector.toLowerCase().includes('chứng khoán') || sector.toLowerCase().includes('dịch vụ tài chính')));
+        const isSecurities = (sector && (sector.toLowerCase().includes('chứng khoán') || sector.toLowerCase().includes('dịch vụ tài chính') || sector.toLowerCase().includes('financial services') || sector.toLowerCase().includes('securities')));
 
         // Render Ranking Table
         if (ranking && ranking.length > 0) {

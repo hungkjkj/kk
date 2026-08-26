@@ -805,7 +805,7 @@ def get_stock_report(ticker, tax_rate_fallback=0.2):
                 'history': history
             }
             
-        elif sector.lower() in ['chứng khoán', 'securities', 'dịch vụ tài chính', 'dịch vụ tài chính (mở rộng)']:
+        elif sector.lower() in ['chứng khoán', 'securities', 'dịch vụ tài chính', 'dịch vụ tài chính (mở rộng)', 'financial services']:
             f_ratio = Finance(symbol=ticker, source='KBS')
             df_ratio = f_ratio.ratio(period='year')
             
@@ -1147,6 +1147,7 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
         
     rank_data = []
     is_bank = False
+    is_securities = False
     for t, rep in reports.items():
         summary = rep['summary']
         if rep['sector'].lower() in ['ngân hàng', 'banks']:
@@ -1161,8 +1162,20 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
                 'Equity_Ratio_Current': summary.get('Equity_Ratio_Current', 0),
                 'Current_Price': summary.get('Current_Price', 0)
             })
+        elif rep['sector'].lower() in ['chứng khoán', 'securities', 'dịch vụ tài chính', 'dịch vụ tài chính (mở rộng)', 'financial services']:
+            is_securities = True
+            rank_data.append({
+                'ticker': t,
+                'PB_Current': summary.get('PB_Current', 0),
+                'PE_Current': summary.get('PE_Current', 0),
+                'ROE_TTM': summary.get('ROE_TTM', 0),
+                'ROE_5Y': summary.get('ROE_5Y', 0),
+                'Equity_Ratio_Current': summary.get('Equity_Ratio_Current', 0),
+                'Current_Price': summary.get('Current_Price', 0)
+            })
         else:
             rank_data.append({
+                'ticker': t,
                 'ROIC_5Y': summary.get('ROIC_5Y', 0),
                 'ROIC_TTM': summary.get('ROIC_TTM', 0),
                 'Value_Ratio': summary.get('Value_Ratio', 0),
@@ -1192,6 +1205,23 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             df_rank['Score_Value'] = (df_rank['Value_Ratio_Current'] / m_value) * 100
             df_rank['Score_EQ'] = (df_rank['Equity_Ratio_Current'] / m_eq) * 100
             df_rank['Total_Score'] = (df_rank['Score_Value'] * 0.30) + (df_rank['Score_EQ'] * 0.25) + (df_rank['Score_ROA'] * 0.25) + (df_rank['Score_NIM'] * 0.20)
+        elif is_securities:
+            import numpy as np
+            m_pb = medians.get('median_pb', 1.5)
+            m_pe = medians.get('median_pe', 15.0)
+            m_roe = medians.get('median_roe_ttm', 0.1)
+            m_roe5 = medians.get('median_roe_5y', 0.1)
+            m_eq = medians.get('median_eq', 0.3)
+            
+            df_rank['Score_PB'] = np.where(df_rank['PB_Current'] > 0, (m_pb / df_rank['PB_Current']) * 100, 0)
+            df_rank['Score_PE'] = np.where(df_rank['PE_Current'] > 0, (m_pe / df_rank['PE_Current']) * 100, 0)
+            df_rank['Score_ROE_TTM'] = (df_rank['ROE_TTM'] / m_roe) * 100
+            df_rank['Score_ROE_5Y'] = (df_rank['ROE_5Y'] / m_roe5) * 100
+            df_rank['Score_EQ'] = (df_rank['Equity_Ratio_Current'] / m_eq) * 100
+            
+            df_rank['Total_Score'] = (df_rank['Score_PB'] * 0.30) + (df_rank['Score_PE'] * 0.20) + \
+                                     (df_rank['Score_ROE_TTM'] * 0.20) + (df_rank['Score_ROE_5Y'] * 0.15) + \
+                                     (df_rank['Score_EQ'] * 0.15)
         else:
             m_roic = medians.get('median_roic', 0.10)
             m_roic_ttm = medians.get('median_roic_ttm', 0.10)
