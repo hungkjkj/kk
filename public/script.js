@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const isBank = (sector && (sector.toLowerCase() === 'ngân hàng' || sector.toLowerCase() === 'banks'));
+        const isSecurities = (sector && (sector.toLowerCase().includes('chứng khoán') || sector.toLowerCase().includes('dịch vụ tài chính')));
 
         // Render Ranking Table
         if (ranking && ranking.length > 0) {
@@ -134,6 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Value Ratio</th>
                         <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">EQ (%)</th>
+                    </tr>
+                `;
+            } else if (isSecurities) {
+                rankingHeader.innerHTML = `
+                    <tr style="background: rgba(255,255,255,0.05); color: #94a3b8;">
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Xếp hạng</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Mã CP</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tổng điểm</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/B (Cur)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">P/E (Cur)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROE (TTM)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">ROE (5Y)</th>
+                        <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">EQ (Cur)</th>
                     </tr>
                 `;
             } else {
@@ -189,6 +203,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px;">${(r.Equity_Ratio_Current * 100).toFixed(1)}%</td>
                         </tr>
                     `;
+                } else if (isSecurities) {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
+                            <td style="padding: 12px;">${idx + 1}</td>
+                            <td style="padding: 12px; color: ${isMain ? '#38bdf8' : 'inherit'}">${r.ticker}</td>
+                            <td style="padding: 12px; color: #fbbf24;">${r.Total_Score ? r.Total_Score.toFixed(1) : '-'}</td>
+                            <td style="padding: 12px;">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
+                            <td style="padding: 12px;">${r.PE_Current ? r.PE_Current.toFixed(1) : '-'}</td>
+                            <td style="padding: 12px;">${r.ROE_TTM ? (r.ROE_TTM * 100).toFixed(1) + '%' : '-'}</td>
+                            <td style="padding: 12px;">${r.ROE_5Y ? (r.ROE_5Y * 100).toFixed(1) + '%' : '-'}</td>
+                            <td style="padding: 12px;">${r.Equity_Ratio_Current ? (r.Equity_Ratio_Current * 100).toFixed(1) + '%' : '-'}</td>
+                        </tr>
+                    `;
                 } else {
                     html += `
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${rowStyle}">
@@ -197,9 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="padding: 12px; color: #fbbf24;">${r.Total_Score.toFixed(1)}</td>
                             <td style="padding: 12px;">${(r.ROIC_5Y * 100).toFixed(1)}%</td>
                             <td style="padding: 12px;">${(r.ROIC_TTM * 100).toFixed(1)}%</td>
-                            <td style="padding: 12px;">${r.BP_5Y.toFixed(2)}</td>
-                            <td style="padding: 12px;">${r.CFO_Quality_TTM.toFixed(2)}</td>
-                            <td style="padding: 12px;">${r.DE_Current.toFixed(2)}</td>
+                            <td style="padding: 12px;">${r.BP_5Y ? r.BP_5Y.toFixed(2) : '-'}</td>
+                            <td style="padding: 12px;">${r.CFO_Quality_TTM ? r.CFO_Quality_TTM.toFixed(2) : '-'}</td>
+                            <td style="padding: 12px;">${r.DE_Current ? r.DE_Current.toFixed(2) : '-'}</td>
                             <td style="padding: 12px;">${formatPBWithPrice(r.PB_Current, r.Current_Price)}</td>
                         </tr>
                     `;
@@ -249,6 +276,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card" title="Độ an toàn vốn (Equity Ratio) = ROA / ROE. Mức đòn bẩy tài chính.">
                     <h3>EQ (%) ℹ️</h3>
+                    <p>${formatPct(summary.Equity_Ratio_Current)}${tQ}</p>
+                </div>
+            `;
+        } else if (isSecurities) {
+            summaryCards.innerHTML = `
+                <div class="card" title="Chỉ số Giá trên Sổ sách (Price to Book).">
+                    <h3>P/B (Current) ⓘ</h3>
+                    <p style="color: #10b981; font-weight: bold;">${formatPBWithPriceSummary(summary.PB_Current, summary.Current_Price)}${tQ}</p>
+                </div>
+                <div class="card" title="Chỉ số P/E.">
+                    <h3>P/E (Current) ⓘ</h3>
+                    <p>${formatNum(summary.PE_Current)}${tQ}</p>
+                </div>
+                <div class="card" title="Sinh lời trên Vốn Chủ Sở Hữu (ROE).">
+                    <h3>ROE (TTM) ⓘ</h3>
+                    <p>${formatPct(summary.ROE_TTM)}${tQ}</p>
+                </div>
+                <div class="card" title="ROE trung bình 5 năm.">
+                    <h3>ROE (5Y) ⓘ</h3>
+                    <p>${formatPct(summary.ROE_5Y)}${tY}</p>
+                </div>
+                <div class="card" title="Tỷ lệ vốn chủ sở hữu (Equity Ratio).">
+                    <h3>Equity Ratio ⓘ</h3>
                     <p>${formatPct(summary.Equity_Ratio_Current)}${tQ}</p>
                 </div>
             `;
@@ -354,6 +404,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasetsEp.push({
                     label: `${t} E/P (%)`,
                     data: hist.map(h => (h.ep * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+            } else if (isSecurities) {
+                datasetsRoic.push({
+                    label: `${t} ROE (%)`,
+                    data: hist.map(h => (h.roe * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsDe.push({
+                    label: `${t} Equity Ratio (%)`,
+                    data: hist.map(h => (h.equity_ratio * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsCfo.push({
+                    label: `${t} ROA (%)`,
+                    data: hist.map(h => (h.roa * 100).toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsBp.push({
+                    label: `${t} P/B`,
+                    data: hist.map(h => h.pb.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsIcr.push({
+                    label: `${t} P/E`,
+                    data: hist.map(h => h.pe.toFixed(2)),
+                    borderColor: c.border,
+                    backgroundColor: c.bg,
+                    borderWidth: borderWidth,
+                    tension: 0.4
+                });
+                datasetsEp.push({
+                    label: `${t} E/P (%)`,
+                    data: hist.map(h => (h.pe > 0 ? (1/h.pe)*100 : 0).toFixed(2)),
                     borderColor: c.border,
                     backgroundColor: c.bg,
                     borderWidth: borderWidth,
