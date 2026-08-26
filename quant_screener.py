@@ -1122,6 +1122,8 @@ def get_sector_medians(sector):
 
 def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
     import re
+    import numpy as np
+    import pandas as pd
     tickers = [main_ticker]
     if peers_str:
         peer_list = [p.strip().upper() for p in re.split(r'[,\s]+', peers_str) if p.strip()]
@@ -1206,7 +1208,6 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
             df_rank['Score_EQ'] = (df_rank['Equity_Ratio_Current'] / m_eq) * 100
             df_rank['Total_Score'] = (df_rank['Score_Value'] * 0.30) + (df_rank['Score_EQ'] * 0.25) + (df_rank['Score_ROA'] * 0.25) + (df_rank['Score_NIM'] * 0.20)
         elif is_securities:
-            import numpy as np
             m_pb = medians.get('median_pb', 1.5)
             m_pe = medians.get('median_pe', 15.0)
             m_roe = medians.get('median_roe_ttm', 0.1)
