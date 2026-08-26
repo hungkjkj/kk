@@ -514,12 +514,16 @@ def run_screener_for_sector(sector, force_update=False):
     results = []
     
     if sector.lower() in ['chứng khoán', 'securities', 'dịch vụ tài chính']:
-        for ticker in top_tickers:
-            res = calculate_engine_securities(ticker)
-            if res:
-                results.append(res)
-            time.sleep(1.5)
-            
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            future_to_ticker = {executor.submit(calculate_engine_securities, t): t for t in top_tickers}
+            for future in concurrent.futures.as_completed(future_to_ticker):
+                try:
+                    res = future.result()
+                    if res:
+                        results.append(res)
+                except Exception as e:
+                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
@@ -571,12 +575,16 @@ def run_screener_for_sector(sector, force_update=False):
         return final_results
         
     elif sector.lower() in ['ngân hàng', 'banks']:
-        for ticker in top_tickers:
-            res = calculate_engine_bank(ticker)
-            if res:
-                results.append(res)
-            time.sleep(1.5) # Thêm delay tránh rate limit
-                
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            future_to_ticker = {executor.submit(calculate_engine_bank, t): t for t in top_tickers}
+            for future in concurrent.futures.as_completed(future_to_ticker):
+                try:
+                    res = future.result()
+                    if res:
+                        results.append(res)
+                except Exception as e:
+                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
@@ -620,12 +628,16 @@ def run_screener_for_sector(sector, force_update=False):
             print("CACHE ERROR:", e)
         return final_results
     else:
-        for ticker in top_tickers:
-            res = calculate_engine(ticker)
-            if res:
-                results.append(res)
-            time.sleep(1.5) # Thêm delay tránh rate limit
-                
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            future_to_ticker = {executor.submit(calculate_engine, t): t for t in top_tickers}
+            for future in concurrent.futures.as_completed(future_to_ticker):
+                try:
+                    res = future.result()
+                    if res:
+                        results.append(res)
+                except Exception as e:
+                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
