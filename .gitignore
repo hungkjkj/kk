@@ -5,3 +5,10 @@ __pycache__/
 .agents/
 api_key.json
 .DS_Store
+
+cache/
+scratch/
+*.json
+!sectors_config.json
+!vci_fields.json
+test_*.py
