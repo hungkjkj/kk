@@ -12,7 +12,7 @@ if api_key:
     try:
         setup_api_key(api_key)
     except Exception as e:
-        print(f"Lỗi khi setup API Key: {e}")
+        print(f"Loi khi setup API Key: {e}")
 
 app = FastAPI(title="Exceptional Trader API")
 

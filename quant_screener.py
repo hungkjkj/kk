@@ -25,7 +25,7 @@ def get_available_sectors():
             return sorted(filtered_sectors)
         return []
     except Exception as e:
-        print("Lỗi khi lấy danh sách ngành:", e)
+        print("Loi khi lấy danh sách ngành:", e)
         # Fallback danh sách tĩnh nếu API lỗi
         return ["Bán lẻ", "Công nghệ thông tin", "Dầu khí", "Hóa chất", "Hàng tiêu dùng", "Xây dựng và Vật liệu", "Tài nguyên Cơ bản"]
 
@@ -41,7 +41,7 @@ def get_tickers_by_sector(sector):
                     if group.lower() == sector.lower():
                         return tickers
     except Exception as e:
-        print("Lỗi đọc sectors_config.json:", e)
+        print("Loi đọc sectors_config.json:", e)
 
     # Fallback to old defaults if config doesn't exist
     s = sector.lower()
@@ -63,7 +63,7 @@ def get_tickers_by_sector(sector):
             if not df_sector.empty and 'symbol' in df_sector.columns:
                 return df_sector['symbol'].tolist()
     except Exception as e:
-        print("Lỗi lấy mã theo ngành:", e)
+        print("Loi lấy mã theo ngành:", e)
     return []
 
 def get_row_value(df, keywords, year_str, default=0):
@@ -221,7 +221,7 @@ def get_top_market_cap(tickers, limit=20):
                     
             return top_tickers[:limit]
     except Exception as e:
-        print("Lỗi khi đối chiếu VN100:", e)
+        print("Loi khi đối chiếu VN100:", e)
         
     return tickers[:limit]
 
@@ -523,7 +523,7 @@ def run_screener_for_sector(sector, force_update=False):
                     if res:
                         results.append(res)
                 except Exception as e:
-                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
+                    print(f"Loi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
@@ -584,7 +584,7 @@ def run_screener_for_sector(sector, force_update=False):
                     if res:
                         results.append(res)
                 except Exception as e:
-                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
+                    print(f"Loi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
@@ -637,7 +637,7 @@ def run_screener_for_sector(sector, force_update=False):
                     if res:
                         results.append(res)
                 except Exception as e:
-                    print(f"Lỗi song song {future_to_ticker[future]}: {e}")
+                    print(f"Loi song song {future_to_ticker[future]}: {e}")
         df = pd.DataFrame(results)
         if df.empty:
             return []
@@ -1154,7 +1154,7 @@ def get_comparative_report(main_ticker, peers_str="", tax_rate_fallback=0.2):
                 if rep:
                     reports[t] = rep
             except Exception as exc:
-                print(f"Lỗi khi lấy {t} song song: {exc}")
+                print(f"Loi khi lấy {t} song song: {exc}")
             
     if main_ticker not in reports:
         return {'status': 'error', 'detail': f'Không tìm thấy dữ liệu cho mã chính {main_ticker}'}
