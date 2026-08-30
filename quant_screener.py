@@ -1121,8 +1121,9 @@ def get_sector_medians(sector):
         except:
             pass
             
-    # Nếu chưa có cache, gọi hàm để fetch top 10 và tạo cache
-    run_screener_for_sector(sector)
+    # Nếu chưa có cache, không gọi đồng bộ để tránh sập RAM trên Render.
+    # Cache sẽ được tạo ngầm thông qua background tasks hoặc cron job.
+    # run_screener_for_sector(sector)
     
     if os.path.exists(medians_cache_file):
         try:
